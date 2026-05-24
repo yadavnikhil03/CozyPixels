@@ -40,19 +40,17 @@ const findImages = (dir, category) => {
   return results;
 };
 
+// Mount static routes for images
 WALLPAPER_DIRS.forEach(dir => {
   const absolutePath = path.join(REPO_ROOT, dir);
   if (fs.existsSync(absolutePath)) {
-    // Mount at both raw name and URL-encoded name for browser compatibility
     app.use(`/${dir}`, express.static(absolutePath));
     app.use(`/${encodeURIComponent(dir)}`, express.static(absolutePath));
   }
 });
 
-// Also serve the root directory as a fallback for full encoded paths
-app.use(express.static(REPO_ROOT));
-
-app.get('/api/wallpapers', (req, res) => {
+// Deployment-friendly routes (prefix /api is handled by vercel.json)
+app.get('/wallpapers', (req, res) => {
   let allWallpapers = [];
   
   WALLPAPER_DIRS.forEach(category => {
@@ -66,7 +64,7 @@ app.get('/api/wallpapers', (req, res) => {
   res.json(allWallpapers);
 });
 
-app.get('/api/download', (req, res) => {
+app.get('/download', (req, res) => {
   const filePathParam = req.query.path;
   if (!filePathParam) {
     return res.status(400).send('Path is required');
@@ -86,6 +84,14 @@ app.get('/api/download', (req, res) => {
   } else {
     res.status(404).send('File not found');
   }
+});
+
+// Legacy support for local development if prefix is included
+app.get('/api/wallpapers', (req, res) => {
+  res.redirect('/wallpapers');
+});
+app.get('/api/download', (req, res) => {
+  res.redirect(`/download?path=${req.query.path}`);
 });
 
 app.listen(PORT, () => {

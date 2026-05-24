@@ -7,8 +7,8 @@ import SanctuaryMode from './components/forgeui/sanctuary-mode';
 import './index.css';
 import './custom-loader.css';
 
-const API_URL = 'http://localhost:3001/api';
-const STATIC_URL = 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || '';
 
 
 const ExtensionModal = ({ onClose, browser }) => {
