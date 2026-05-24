@@ -6,7 +6,7 @@
   <p><strong>Digital Hygge for Your Sanctuary.</strong></p>
   
   <p>
-    <a href="https://cozypixels.vercel.app"><strong>Visit the Sanctuary →</strong></a>
+    <a href="https://cozy-pixels.vercel.app/"><strong>Visit the Sanctuary →</strong></a>
   </p>
 
   <p>
