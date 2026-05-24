@@ -27,8 +27,3 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
-
-# Project specific
-Catppuccin/
-Nord/
-One Dark/
