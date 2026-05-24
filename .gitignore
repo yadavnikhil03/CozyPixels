@@ -16,7 +16,6 @@ backend/package-lock.json
 # Build artifacts
 dist/
 build/
-backend/extension.zip
 
 # OS files
 .DS_Store

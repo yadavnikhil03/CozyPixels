@@ -50,6 +50,21 @@ WALLPAPER_DIRS.forEach(dir => {
 });
 
 // Deployment-friendly routes (prefix /api is handled by vercel.json)
+app.get('/extension.zip', (req, res) => {
+  const filePath = path.join(__dirname, 'extension.zip');
+  if (fs.existsSync(filePath)) {
+    res.download(filePath);
+  } else {
+    // Try project root if not in backend folder
+    const rootPath = path.join(REPO_ROOT, 'extension.zip');
+    if (fs.existsSync(rootPath)) {
+      res.download(rootPath);
+    } else {
+      res.status(404).send('Extension bundle not found. Please contact the developer.');
+    }
+  }
+});
+
 app.get('/wallpapers', (req, res) => {
   let allWallpapers = [];
   
