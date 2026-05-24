@@ -32,7 +32,7 @@ The **Cozy Engine** replaces your boring default New Tab page with a rotating di
 - **Lightweight**: Zero bloat, just pure serenity.
 
 ### 🛠️ How to Install the Engine
-1. Visit the [CozyPixels Sanctuary](https://cozypixels.vercel.app).
+1. Visit the [CozyPixels Sanctuary](https://cozy-pixels.vercel.app/).
 2. Click the **"Install Cozy Engine"** button to download the bundle.
 3. Open your browser's extensions page (e.g., `chrome://extensions`).
 4. Enable **"Developer mode"** in the top right.
