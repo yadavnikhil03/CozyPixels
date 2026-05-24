@@ -1,20 +1,16 @@
-<!-- ==================== BANNER SECTION ==================== -->
+
 
 <div align="center">
   <a href="https://github.com/SleepyCatHey/CozyPixels/blob/main/cozypixels-banner.png">
     <img src="cozypixels-banner.png" width="100%" alt="CozyPixels - Wallpaper Collection Banner">
   </a>
-</div>
 
-<!-- ==================== HEADER SECTION ==================== -->
 
 <h1 align="center">CozyPixels</h1>
 
 <p align="center">
   🎨 A curated collection of cozy, aesthetic wallpapers for every mood. Features Catppuccin, Nord, Dracula, One Dark themes & more. Perfect for your desktop setup! ✨
 </p>
-
-<!-- ==================== PREVIEW GALLERY ==================== -->
 
 ## 🌟 Preview Gallery
 
@@ -68,7 +64,6 @@
   </tbody>
 </table>
 
-<!-- ==================== CATEGORIES ==================== -->
 
 ## 📂 Categories
 
@@ -76,7 +71,6 @@
 - **[Nord](https://github.com/SleepyCatHey/CozyPixels/tree/main/Nord)** - Arctic, north-bluish color palette
 - **[One Dark](https://github.com/SleepyCatHey/CozyPixels/tree/main/One%20Dark)** - Comfortable dark theme
 
-<!-- ==================== DOWNLOAD INSTRUCTIONS ==================== -->
 
 ## 📥 Download
 
@@ -89,7 +83,7 @@ Simply navigate to your desired category folder and download the wallpapers you 
 
 ---
 
-<!-- ==================== COLLECTION DISCLAIMER ==================== -->
+
 
 ## ⚠️ About This Collection
 
@@ -103,7 +97,6 @@ Simply navigate to your desired category folder and download the wallpapers you 
 
 **To the amazing artists out there:** If you see your artwork here without credit, please know it's because I genuinely loved and used your work - not because I'm claiming it as mine. A huge thank you for creating such beautiful wallpapers! 🙏
 
-<!-- ==================== CREDITS & SOURCES ==================== -->
 
 ## 🤝 Thanks & Sources
 

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PillowPaper | Your Serene Space</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=DM+Sans:wght@400;500;700&amp;family=Geist:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-container": "#9cefff",
+                    "tertiary-fixed": "#f3deda",
+                    "secondary-fixed": "#9cefff",
+                    "tertiary-container": "#d1bdb9",
+                    "on-primary-fixed-variant": "#38437a",
+                    "surface-container-low": "#faf4d6",
+                    "outline": "#767680",
+                    "on-tertiary-fixed-variant": "#514441",
+                    "surface-container": "#f4efd1",
+                    "secondary": "#006875",
+                    "primary": "#505b93",
+                    "on-primary-fixed": "#09154c",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#006f7c",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#e0dbbe",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-container": "#5a4c49",
+                    "on-tertiary": "#ffffff",
+                    "primary-fixed-dim": "#bac3ff",
+                    "on-background": "#1e1c0a",
+                    "primary-container": "#b4befe",
+                    "surface": "#fffae2",
+                    "on-tertiary-fixed": "#241917",
+                    "on-surface-variant": "#45464f",
+                    "primary-fixed": "#dee0ff",
+                    "surface-tint": "#505b93",
+                    "inverse-on-surface": "#f7f1d3",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface": "#1e1c0a",
+                    "surface-variant": "#e8e3c6",
+                    "surface-bright": "#fffae2",
+                    "surface-container-highest": "#e8e3c6",
+                    "tertiary": "#6a5b58",
+                    "on-secondary-fixed": "#001f24",
+                    "inverse-primary": "#bac3ff",
+                    "surface-container-high": "#eee9cb",
+                    "tertiary-fixed-dim": "#d6c2be",
+                    "inverse-surface": "#33311d",
+                    "error": "#ba1a1a",
+                    "secondary-fixed-dim": "#80d3e2",
+                    "outline-variant": "#c6c5d1",
+                    "on-secondary-fixed-variant": "#004f58",
+                    "on-primary-container": "#414b83",
+                    "on-primary": "#ffffff",
+                    "background": "#fffae2"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "margin-mobile": "20px",
+                    "unit": "8px",
+                    "container-max": "1440px",
+                    "margin-desktop": "64px"
+            },
+            "fontFamily": {
+                    "display-lg-mobile": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["DM Sans"],
+                    "label-sm": ["Geist"],
+                    "body-md": ["DM Sans"]
+            },
+            "fontSize": {
+                    "display-lg-mobile": ["32px", {"lineHeight": "1.2", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "label-sm": ["13px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { background-color: #fffae2; }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .bounce-click:active {
+            transform: scale(0.9);
+            animation: soft-bounce 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes soft-bounce {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="font-body-md text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl shadow-[0px_10px_30px_-5px_rgba(180,190,254,0.2)]">
+<div class="flex justify-between items-center max-w-[1440px] mx-auto px-margin-desktop h-20">
+<div class="flex items-center gap-3">
+<img alt="PillowPaper Logo" class="w-10 h-10 object-contain" src="data:image/png;base64,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"/>
+<span class="font-display-lg text-[24px] tracking-tighter text-primary">PillowPaper</span>
+</div>
+<nav class="hidden md:flex items-center gap-8">
+<a class="font-body-md text-body-md text-primary border-b-2 border-primary pb-1 transition-colors duration-300" href="#">Explore</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Trending</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Collections</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-300" href="#">Community</a>
+</nav>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors scale-95 active:scale-90">account_circle</button>
+</div>
+</div>
+</header>
+<main class="pt-32 pb-20">
+<!-- Hero Section -->
+<section class="max-w-[1440px] mx-auto px-margin-desktop text-center mb-16">
+<h1 class="font-display-lg text-display-lg text-primary mb-4">Your Serene Space Starts Here</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl mx-auto">
+                Discover curated wallpapers designed for digital hygge. Minimalist, calm, and perfectly balanced for your sanctuary.
+            </p>
+</section>
+<!-- Filter Bar -->
+<section class="max-w-[1440px] mx-auto px-margin-desktop mb-12">
+<div class="flex flex-wrap justify-center gap-4">
+<button class="px-8 py-3 rounded-full bg-primary text-on-primary font-label-sm text-label-sm shadow-lg shadow-primary/20 hover:scale-105 transition-transform">All</button>
+<button class="px-8 py-3 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm hover:bg-primary-container hover:text-on-primary-container transition-all">Catppuccin</button>
+<button class="px-8 py-3 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm hover:bg-primary-container hover:text-on-primary-container transition-all">Nord</button>
+<button class="px-8 py-3 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm hover:bg-primary-container hover:text-on-primary-container transition-all">One Dark</button>
+<button class="px-8 py-3 rounded-full bg-surface-container-high text-on-surface-variant font-label-sm text-label-sm hover:bg-primary-container hover:text-on-primary-container transition-all">Minimal</button>
+</div>
+</section>
+<!-- Gallery Grid -->
+<section class="max-w-[1440px] mx-auto px-margin-desktop">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+<!-- Wallpaper Card 1 -->
+<div class="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-[0px_10px_30px_-5px_rgba(180,190,254,0.15)] hover:shadow-[0px_20px_40px_-5px_rgba(180,190,254,0.25)] transition-all duration-500 hover:scale-[1.02]">
+<img class="w-full h-full object-cover" data-alt="A smooth, flowing abstract background featuring soft waves of lavender and cream. The lighting is diffused and ethereal, creating a peaceful digital landscape. The aesthetic is clean and minimalist, perfectly capturing the serenity of a quiet morning. Subtle gradients blend seamlessly across the composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvKSPrIVUiLxdO7iph2KCyFObfeqGYD6CYu7IPfuzP_nZ0jQCh9zKAR8lfA1QMJo_tGnk4qifudE2VrFWXjE2kIycCs7nkdhZrNWxGGSWbUnW8Fqj3f2bz8crRXSAWhMotUqU8vAJRml4cz43ZzLHTx8mw29HgvpWdLyP8_AV5X_jOmgfMTfZpE1bVYu-3R6bQdWl9suAB99pvklunxeqm0QwgwLf-xmFuXPRXkfexsYuBqwNE8WXMAuczdqce4ACO_ymz4YuJPzo"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="absolute bottom-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+<button class="glass-card p-3 rounded-full text-white hover:scale-110 transition-transform" onanimationend="this.classList.remove('bounce-click')" onclick="this.classList.add('bounce-click')">
+<span class="material-symbols-outlined flex items-center justify-center">download</span>
+</button>
+</div>
+</div>
+<!-- Wallpaper Card 2 -->
+<div class="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-[0px_10px_30px_-5px_rgba(180,190,254,0.15)] hover:shadow-[0px_20px_40px_-5px_rgba(180,190,254,0.25)] transition-all duration-500 hover:scale-[1.02]">
+<img class="w-full h-full object-cover" data-alt="An elegant minimalist digital artwork showcasing soft geometric circles in shades of dusty rose and warm beige. The background is a crisp off-white, emphasizing a spacious and organized layout. Soft shadows give the shapes a three-dimensional, paper-like quality. The overall mood is sophisticated and calming." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC9gPiBcaKCWaH3FrJstQIYLyynGN2DiHUKua_FpbCAThLGkxRYQlMuXChtuoq5YWYn_fZRluLoHeBFpwXknnYuuC2H92ftoRgwFdVNXO1vli_e43vCfkZRAn9VyG3HGOqv5WP-NXFZbwVVfsCkTwpnM12Zg7ooYjpjmIc2oLZpyoF97tn45fmuYuIC5ROOzi7jPOanrdP74hAlUQe_DOeUcpA2qlInNZiMroZ1qmaPNj-VAK8A4XBIwi-0LO8TyYx_1P9LudhyFKo"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="absolute bottom-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+<button class="glass-card p-3 rounded-full text-white hover:scale-110 transition-transform" onanimationend="this.classList.remove('bounce-click')" onclick="this.classList.add('bounce-click')">
+<span class="material-symbols-outlined flex items-center justify-center">download</span>
+</button>
+</div>
+</div>
+<!-- Wallpaper Card 3 -->
+<div class="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-[0px_10px_30px_-5px_rgba(180,190,254,0.15)] hover:shadow-[0px_20px_40px_-5px_rgba(180,190,254,0.25)] transition-all duration-500 hover:scale-[1.02]">
+<img class="w-full h-full object-cover" data-alt="A high-key abstract composition with airy, cloud-like textures in pale blue and soft grey. The visual style is light and breathable, suggesting a wide open sky. The lighting is soft and ambient, with no harsh edges. It evokes a feeling of tranquility and mental clarity, perfect for a focused workspace." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDqebqRP_kbl13RlwFrcQmLMVUeAyrUTNHDPjBcThlRpNRyos6hi8rysPuRy09g2GseEv0tReJE3V8YnQ2que3_5NQFZlXhqTfXYIpGoSeDJ6W7kGNBoHmKym-WfecQfcaChhdJHu0X0k7r4sd2CRKEnXpXG_biwHEyINPB21KkljIip4kfRbww1JOhfSgovy4ITLYMzrAU6RiCTp2vv9FWcngwRIIsYS8gDDoahXTeX6m7656z_6P0J0bVFQ7BAGKhK31qGrBOI4M"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="absolute bottom-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+<button class="glass-card p-3 rounded-full text-white hover:scale-110 transition-transform" onanimationend="this.classList.remove('bounce-click')" onclick="this.classList.add('bounce-click')">
+<span class="material-symbols-outlined flex items-center justify-center">download</span>
+</button>
+</div>
+</div>
+<!-- Wallpaper Card 4 -->
+<div class="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-[0px_10px_30px_-5px_rgba(180,190,254,0.15)] hover:shadow-[0px_20px_40px_-5px_rgba(180,190,254,0.25)] transition-all duration-500 hover:scale-[1.02]">
+<img class="w-full h-full object-cover" data-alt="A warm, grainy gradient background that transitions from a soft amber to a delicate peach. The texture is organic and inviting, reminiscent of early sunset light filtered through a window. The style is minimalist yet deeply emotive. The lighting is golden and warm, casting a gentle glow over the entire frame." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUt-XM6LkBaRvYXy2r_ZiWY_FUVJsxphBFTPP3uq35rmpb6BDe5yBLB1kNO1HSUuvk4tqhBPQLuj_xinSMEcYV6QLMgnaZCtw28a9PT8lZFmKfYVD4hYJ3zLj2uNjKRm5OopULqPMrwcLub7rgrnO0QP72TPSXUG2-C2_foSsF2Tmfq0GNRz_0DSL6fxxGQsATz80D-rAmi_cMqanh5dLw8QnNfO7fWL2y4SR0zhUES_Q8fNdxOYH-NTIdski3FZLI7442bTdFoH8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="absolute bottom-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+<button class="glass-card p-3 rounded-full text-white hover:scale-110 transition-transform" onanimationend="this.classList.remove('bounce-click')" onclick="this.classList.add('bounce-click')">
+<span class="material-symbols-outlined flex items-center justify-center">download</span>
+</button>
+</div>
+</div>
+<!-- Wallpaper Card 5 -->
+<div class="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-[0px_10px_30px_-5px_rgba(180,190,254,0.15)] hover:shadow-[0px_20px_40px_-5px_rgba(180,190,254,0.25)] transition-all duration-500 hover:scale-[1.02]">
+<img class="w-full h-full object-cover" data-alt="A digital wallpaper featuring sleek, dark grey curves with thin neon-like lavender accents. The aesthetic is a blend of dark mode and glassmorphism, with translucent layers overlapping to create depth. The mood is modern, high-tech, yet curated and quiet. Perfect for an aesthetic conscious desktop setup." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAB_oEAAJjWqIIQFyJ61CNQKdrAo1U9bMNMjNdscagUNo7jURdJikU-h78_if9O0NFl_K7CDg8BpsswKbFTvNgvBEt7ElAoUDmiCYPbQXnHlCTFOdZmkst_j_otO6NP7ziDOFjglxJJ2WJBPaZtyAdRjCgKhK8TdIpzVVS15G3iyvPmZCa4wjKsRLoTMgREhlwkMEu0-4gHhCy1mGeuRmFcLLaRcJKNsGubEA6Zby5wkmkOZUEHq3ObYRAHPJGCgUb6RUDFLIBZrSg"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="absolute bottom-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+<button class="glass-card p-3 rounded-full text-white hover:scale-110 transition-transform" onanimationend="this.classList.remove('bounce-click')" onclick="this.classList.add('bounce-click')">
+<span class="material-symbols-outlined flex items-center justify-center">download</span>
+</button>
+</div>
+</div>
+<!-- Wallpaper Card 6 -->
+<div class="group relative aspect-[16/10] rounded-xl overflow-hidden shadow-[0px_10px_30px_-5px_rgba(180,190,254,0.15)] hover:shadow-[0px_20px_40px_-5px_rgba(180,190,254,0.25)] transition-all duration-500 hover:scale-[1.02]">
+<img class="w-full h-full object-cover" data-alt="Minimalist abstract blocks in soft mint green and light charcoal. The composition is structured but light, with plenty of negative space. The surfaces have a subtle matte finish that absorbs light softly. The visual language is calm and organized, appealing to a sense of order and digital serenity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi3wKbdYhIBlzwDxBlwFD1ZMVyTc2TJ-48xu5S-FiuMqAWdtbKVSKF3aWy99nUnVBNAA8hx-OJUzzOv72fhKJgZuuCxBJZY2gMQ2kKljPR7BCq51dsM2r_8UykujOjClu5ELXhY3uQigaxke-eFD41SYwyHpIveDjOG5v7t23H4NdQFE8V9yOj4c8ODmHJvDHOrf4gB82WfazIXRZ-2gDolt98p4cYUhq9lAr4n2nr65UiCmgP_J7_UFoZvNaoCK_NIAj7xh9Mee8"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="absolute bottom-4 right-4 translate-y-4 group-hover:translate-y-0 opacity-0 group-hover:opacity-100 transition-all duration-300">
+<button class="glass-card p-3 rounded-full text-white hover:scale-110 transition-transform" onanimationend="this.classList.remove('bounce-click')" onclick="this.classList.add('bounce-click')">
+<span class="material-symbols-outlined flex items-center justify-center">download</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- CTA Section -->
+<section class="mt-24 max-w-[1440px] mx-auto px-margin-desktop text-center">
+<div class="bg-primary-container/30 rounded-[2rem] p-12 backdrop-blur-sm">
+<h2 class="font-headline-md text-headline-md text-primary mb-6">Never miss a new drop</h2>
+<div class="flex flex-col md:flex-row gap-4 justify-center max-w-lg mx-auto">
+<input class="bg-surface/50 border-none rounded-full px-6 py-4 focus:ring-2 focus:ring-primary/20 w-full placeholder-on-surface-variant/50" placeholder="your@email.com" type="email"/>
+<button class="bg-primary text-on-primary px-8 py-4 rounded-full font-label-sm text-label-sm shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Subscribe</button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-16 bg-surface border-t border-outline-variant/20">
+<div class="flex flex-col md:flex-row justify-between items-center max-w-[1440px] mx-auto px-margin-desktop">
+<div class="mb-8 md:mb-0">
+<span class="font-display-lg text-[32px] text-primary">PillowPaper</span>
+<p class="font-label-sm text-label-sm text-on-surface-variant mt-2">© 2024 PillowPaper. Crafted for serenity.</p>
+</div>
+<div class="flex gap-8">
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="#">Privacy Policy</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="#">Terms of Service</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="#">API Docs</a>
+<a class="font-label-sm text-label-sm text-on-surface-variant hover:text-primary transition-all opacity-80 hover:opacity-100" href="#">Contact</a>
+</div>
+</div>
+</footer>
+<script>
+        // Micro-interaction for filter buttons
+        const filters = document.querySelectorAll('button[class*="rounded-full"]');
+        filters.forEach(btn => {
+            btn.addEventListener('click', () => {
+                filters.forEach(f => {
+                    f.classList.remove('bg-primary', 'text-on-primary', 'shadow-lg', 'shadow-primary/20');
+                    f.classList.add('bg-surface-container-high', 'text-on-surface-variant');
+                });
+                btn.classList.add('bg-primary', 'text-on-primary', 'shadow-lg', 'shadow-primary/20');
+                btn.classList.remove('bg-surface-container-high', 'text-on-surface-variant');
+            });
+        });
+
+        // Simple paralax-ish effect on cards
+        document.addEventListener('mousemove', (e) => {
+            const cards = document.querySelectorAll('.group');
+            const mouseX = e.clientX / window.innerWidth - 0.5;
+            const mouseY = e.clientY / window.innerHeight - 0.5;
+
+            cards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                if (rect.top < window.innerHeight && rect.bottom > 0) {
+                    const img = card.querySelector('img');
+                    img.style.transform = `scale(1.1) translate(${mouseX * 10}px, ${mouseY * 10}px)`;
+                }
+            });
+        });
+    </script>
+</body></html>
