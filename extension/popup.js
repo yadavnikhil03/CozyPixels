@@ -1,17 +1,25 @@
-document.getElementById('rotate-btn').addEventListener('click', async () => {
-  const result = await chrome.storage.local.get(['allWallpapers']);
-  if (result.allWallpapers && result.allWallpapers.length > 0) {
-    const randomIdx = Math.floor(Math.random() * result.allWallpapers.length);
-    const selected = result.allWallpapers[randomIdx];
-    await chrome.storage.local.set({ 
-      currentWallpaper: `http://localhost:3001${selected.path}`,
-      currentMeta: selected
-    });
-    // Notify any open newtab pages to update
-    window.close();
-  }
+document.getElementById('rotate-btn').addEventListener('click', () => {
+  const btn = document.getElementById('rotate-btn');
+  btn.disabled = true;
+  btn.innerText = 'Updating...';
+  
+  // Request rotation from background worker
+  chrome.runtime.sendMessage({ action: "triggerRotation" }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("Popup Error:", chrome.runtime.lastError);
+      btn.innerText = 'Error - Try Again';
+    } else {
+      btn.innerText = 'Vibe Updated';
+    }
+    
+    // Re-enable after short delay
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerText = 'New Random Vibe';
+    }, 1500);
+  });
 });
 
 document.getElementById('site-btn').addEventListener('click', () => {
-  chrome.tabs.create({ url: 'http://localhost:5173' });
+  chrome.tabs.create({ url: 'https://cozypixels.vercel.app' });
 });

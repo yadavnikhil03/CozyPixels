@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="icon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#505b93;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#b4befe;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Squircle -->
+  <rect width="128" height="128" rx="36" fill="url(#icon-grad)"/>
+  
+  <!-- Stylized Pixel "Zen" Symbol -->
+  <g fill="white">
+    <!-- Top -->
+    <rect x="56" y="32" width="16" height="16" rx="4" opacity="0.9" />
+    <!-- Center -->
+    <rect x="56" y="56" width="16" height="16" rx="6" />
+    <!-- Bottom -->
+    <rect x="56" y="80" width="16" height="16" rx="4" opacity="0.9" />
+    <!-- Left -->
+    <rect x="32" y="56" width="16" height="16" rx="4" opacity="0.7" />
+    <!-- Right -->
+    <rect x="80" y="56" width="16" height="16" rx="4" opacity="0.7" />
+    
+    <!-- Inner Sparkles -->
+    <rect x="42" y="42" width="8" height="8" rx="2" opacity="0.5" />
+    <rect x="78" y="42" width="8" height="8" rx="2" opacity="0.5" />
+    <rect x="42" y="78" width="8" height="8" rx="2" opacity="0.5" />
+    <rect x="78" y="78" width="8" height="8" rx="2" opacity="0.5" />
+  </g>
+</svg>

@@ -13,7 +13,7 @@ const STATIC_URL = import.meta.env.VITE_STATIC_URL || (import.meta.env.PROD ? ''
 
 const ExtensionModal = ({ onClose, browser }) => {
   const [copied, setCopied] = useState(false);
-  const downloadUrl = `${STATIC_URL}/extension.zip`;
+  const downloadUrl = 'https://github.com/user-attachments/files/28191045/extension.zip';
 
   const copyUrl = () => {
     navigator.clipboard.writeText(browser.url);
@@ -517,8 +517,8 @@ function App() {
     const browser = detectBrowser();
     setBrowserInfo(browser);
 
-    // 1. Trigger the download immediately
-    const downloadUrl = `${STATIC_URL}/extension.zip`;
+    // 1. Trigger the download immediately from GitHub CDN
+    const downloadUrl = 'https://github.com/user-attachments/files/28191045/extension.zip';
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = 'cozy-engine.zip';

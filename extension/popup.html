@@ -2,21 +2,126 @@
 <html>
 <head>
   <style>
-    body { width: 240px; padding: 16px; font-family: sans-serif; background: #fffae2; }
-    h2 { font-size: 18px; margin: 0 0 12px; color: #505b93; }
-    .btn { 
-      background: #505b93; color: white; border: none; padding: 10px; width: 100%; 
-      border-radius: 8px; cursor: pointer; font-weight: bold; margin-bottom: 8px;
+    :root {
+      --color-primary: #505b93;
+      --color-bg: #ffffff;
+      --color-text: #1e1c0a;
+      --color-accent: #b4befe;
     }
-    .btn:hover { background: #414b83; }
-    .label { font-size: 12px; color: #666; margin-bottom: 4px; }
+    body { 
+      width: 300px; 
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--color-bg); 
+      color: var(--color-text);
+    }
+    .container {
+      padding: 24px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .logo-mark {
+      width: 40px;
+      height: 40px;
+      background: var(--color-primary);
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 700;
+      font-size: 20px;
+    }
+    .header-text {
+      display: flex;
+      flex-direction: column;
+    }
+    h2 { font-size: 18px; margin: 0; color: var(--color-primary); font-weight: 700; }
+    .status { font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .btn { 
+      background: var(--color-primary); 
+      color: white; 
+      border: none; 
+      padding: 14px; 
+      width: 100%; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      font-weight: 600; 
+      font-size: 14px;
+      margin-bottom: 12px;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(80, 91, 147, 0.2);
+    }
+    .btn:hover { 
+      background: #414b83; 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(80, 91, 147, 0.3);
+    }
+    .btn:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-secondary {
+      background: white;
+      border: 1.5px solid var(--color-accent);
+      color: var(--color-primary);
+      box-shadow: none;
+    }
+    .btn-secondary:hover {
+      background: var(--color-accent);
+      color: #414b83;
+      border-color: var(--color-accent);
+    }
+    
+    .footer {
+      border-top: 1px solid #f0f0f0;
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+    }
+    .dev-link {
+      color: var(--color-primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .dev-link:hover {
+      text-decoration: underline;
+    }
+    .version {
+      opacity: 0.4;
+    }
   </style>
 </head>
 <body>
-  <h2>Cozy Engine</h2>
-  <div class="label">Daily Zen</div>
-  <button id="rotate-btn" class="btn">New Random Vibe</button>
-  <button id="site-btn" class="btn">Visit Sanctuary</button>
+  <div class="container">
+    <div class="header">
+      <div class="logo-mark">C</div>
+      <div class="header-text">
+        <h2>Cozy Engine</h2>
+        <span class="status">System Active</span>
+      </div>
+    </div>
+    
+    <button id="rotate-btn" class="btn">New Random Vibe</button>
+    <button id="site-btn" class="btn btn-secondary">Visit Sanctuary</button>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/yadavnikhil03" target="_blank" class="dev-link">@yadavnikhil03</a>
+    <span class="version">v1.0.0</span>
+  </div>
+  
   <script src="popup.js"></script>
 </body>
 </html>
