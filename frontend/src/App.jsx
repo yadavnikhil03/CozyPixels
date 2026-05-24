@@ -7,8 +7,8 @@ import SanctuaryMode from './components/forgeui/sanctuary-mode';
 import './index.css';
 import './custom-loader.css';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
-const STATIC_URL = import.meta.env.VITE_STATIC_URL || 'http://localhost:3001';
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
 
 
 const ExtensionModal = ({ onClose, browser }) => {
@@ -141,12 +141,13 @@ const Hero = ({ searchQuery, onSearch }) => (
 
 
 const CategoryFilter = ({ categories, selected, onSelect, counts }) => (
-  <section className="container filters">
+  <nav className="container filters" aria-label="Wallpaper categories">
     <button
       className={`filter-btn ${selected === 'All' ? 'active' : ''}`}
       onClick={() => onSelect('All')}
+      aria-pressed={selected === 'All'}
     >
-      All
+      All Wallpapers
       <span className="filter-count">{counts.total}</span>
     </button>
     {categories.map((cat) => (
@@ -154,12 +155,13 @@ const CategoryFilter = ({ categories, selected, onSelect, counts }) => (
         key={cat}
         className={`filter-btn ${selected === cat ? 'active' : ''}`}
         onClick={() => onSelect(cat)}
+        aria-pressed={selected === cat}
       >
         {cat}
         <span className="filter-count">{counts[cat] || 0}</span>
       </button>
     ))}
-  </section>
+  </nav>
 );
 
 
@@ -583,7 +585,8 @@ function App() {
           onSelect={setCategory}
           counts={counts}
         />
-        <section className="container gallery">
+        <section className="container gallery" aria-label="Wallpapers collection">
+          <h2 className="sr-only">High Resolution Wallpaper Gallery</h2>
           <AnimatePresence mode="popLayout">
             {filteredWallpapers.map((w) => (
               <WallpaperCard
