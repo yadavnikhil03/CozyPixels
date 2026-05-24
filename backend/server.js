@@ -11,6 +11,23 @@ const REPO_ROOT = path.join(__dirname, '..');
 
 const WALLPAPER_DIRS = ['Catppuccin', 'Nord', 'One Dark'];
 
+// Priority Route: Extension Download
+app.get('/extension.zip', (req, res) => {
+  console.log('Download request received for /extension.zip');
+  const filePath = path.join(__dirname, 'extension.zip');
+  if (fs.existsSync(filePath)) {
+    console.log('Serving extension from backend folder');
+    return res.download(filePath);
+  }
+  const rootPath = path.join(REPO_ROOT, 'extension.zip');
+  if (fs.existsSync(rootPath)) {
+    console.log('Serving extension from project root');
+    return res.download(rootPath);
+  }
+  console.error('Extension bundle not found at either path');
+  res.status(404).send('Extension bundle not found. Please contact the developer.');
+});
+
 const findImages = (dir, category) => {
   let results = [];
   try {
@@ -50,21 +67,6 @@ WALLPAPER_DIRS.forEach(dir => {
 });
 
 // Deployment-friendly routes (prefix /api is handled by vercel.json)
-app.get('/extension.zip', (req, res) => {
-  const filePath = path.join(__dirname, 'extension.zip');
-  if (fs.existsSync(filePath)) {
-    res.download(filePath);
-  } else {
-    // Try project root if not in backend folder
-    const rootPath = path.join(REPO_ROOT, 'extension.zip');
-    if (fs.existsSync(rootPath)) {
-      res.download(rootPath);
-    } else {
-      res.status(404).send('Extension bundle not found. Please contact the developer.');
-    }
-  }
-});
-
 app.get('/wallpapers', (req, res) => {
   let allWallpapers = [];
   
@@ -107,6 +109,9 @@ app.get('/api/wallpapers', (req, res) => {
 });
 app.get('/api/download', (req, res) => {
   res.redirect(`/download?path=${req.query.path}`);
+});
+app.get('/api/extension.zip', (req, res) => {
+  res.redirect('/extension.zip');
 });
 
 app.listen(PORT, () => {
