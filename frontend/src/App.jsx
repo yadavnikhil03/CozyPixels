@@ -531,25 +531,44 @@ function App() {
   };
 
   useEffect(() => {
-    const minLoadTime = new Promise(resolve => setTimeout(resolve, 800));
-    const fetchWallpapers = fetch(`${API_URL}/wallpapers`).then(res => res.json());
+    // Fail-safe: Always hide loader after 5 seconds max
+    const failSafeTimeout = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) console.warn('Loading timed out - forcing UI display');
+        return false;
+      });
+    }, 5000);
 
-    Promise.all([fetchWallpapers, minLoadTime])
+    const minLoadTime = new Promise(resolve => setTimeout(resolve, 800));
+    
+    fetch(`${API_URL}/wallpapers`)
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        return Promise.all([Promise.resolve(data), minLoadTime]);
+      })
       .then(([data]) => {
-        console.log('Wallpapers loaded:', data.length);
-        setWallpapers(data);
+        if (Array.isArray(data)) {
+          setWallpapers(data);
+        } else {
+          console.error('Data is not an array:', data);
+        }
         setLoading(false);
+        clearTimeout(failSafeTimeout);
       })
       .catch((err) => {
         console.error('Error fetching wallpapers:', err);
         setLoading(false);
+        clearTimeout(failSafeTimeout);
       });
+
+    return () => clearTimeout(failSafeTimeout);
   }, []);
 
   
-
-  
-  const categories = [...new Set(wallpapers.map((w) => w.category))];
+  const categories = Array.isArray(wallpapers) ? [...new Set(wallpapers.map((w) => w.category))] : [];
 
   const counts = {
     total: wallpapers.length,
