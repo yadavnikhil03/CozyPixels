@@ -21,7 +21,7 @@ document.getElementById('rotate-btn').addEventListener('click', () => {
 });
 
 document.getElementById('site-btn').addEventListener('click', () => {
-  chrome.tabs.create({ url: 'https://cozypixels.vercel.app' });
+  chrome.tabs.create({ url: 'https://cozy-pixels.vercel.app/' });
 });
 
 // Load current rotation interval
