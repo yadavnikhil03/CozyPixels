@@ -1,14 +1,55 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence, useMotionValueEvent, useScroll, useTransform } from 'motion/react';
 import { LuGithub, LuTwitter, LuGlobe, LuSparkles, LuWind, LuRotateCcw, LuChevronRight, LuCopy, LuCheck } from 'react-icons/lu';
 import SocialCard from './components/forgeui/social-card';
 import FlipText from './components/forgeui/flip-text';
 import SanctuaryMode from './components/forgeui/sanctuary-mode';
 import './index.css';
-import './custom-loader.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
 const STATIC_URL = import.meta.env.VITE_STATIC_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+
+const promoSectionVariants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.8,
+      ease: [0.22, 1, 0.36, 1],
+      staggerChildren: 0.12,
+      delayChildren: 0.12,
+    },
+  },
+};
+
+const promoItemVariants = {
+  hidden: { opacity: 0, y: 18 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: 'easeOut' },
+  },
+};
+
+const modalBackdropVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.22 } },
+  exit: { opacity: 0, transition: { duration: 0.18 } },
+};
+
+const modalCardVariants = {
+  hidden: { opacity: 0, y: 28, scale: 0.96 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 220, damping: 22 },
+  },
+  exit: { opacity: 0, y: 18, scale: 0.98, transition: { duration: 0.16 } },
+};
+
+
 
 
 const ExtensionModal = ({ onClose, browser }) => {
@@ -22,8 +63,19 @@ const ExtensionModal = ({ onClose, browser }) => {
   };
   
   return (
-    <div className="lightbox-overlay" onClick={onClose}>
-      <div className="extension-modal-content" onClick={(e) => e.stopPropagation()}>
+    <motion.div
+      className="lightbox-overlay extension-modal-overlay"
+      onClick={onClose}
+      variants={modalBackdropVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+    >
+      <motion.div
+        className="extension-modal-content"
+        onClick={(e) => e.stopPropagation()}
+        variants={modalCardVariants}
+      >
         <button className="lightbox-close" onClick={onClose}>
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
         </button>
@@ -66,8 +118,8 @@ const ExtensionModal = ({ onClose, browser }) => {
             I've loaded the Engine!
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
@@ -99,42 +151,46 @@ const Header = ({ totalCount }) => {
 };
 
 
-const Hero = ({ searchQuery, onSearch }) => (
+const Hero = () => (
   <div className="hero-wrapper">
     <div className="hero-bg" />
     <div className="hero-blob blob-1" />
     <div className="hero-blob blob-2" />
     <div className="hero-blob blob-3" />
     <div className="hero-blob blob-4" />
-    <section className="hero container text-center">
-      <h1 className="hero-title text-center">
-        <FlipText>Your Serene Space Starts Here</FlipText>
-      </h1>
-      <motion.p 
-        className="hero-subtitle"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.8 }}
-      >
-        Discover curated wallpapers designed for digital hygge. Minimalist, calm,
-        and perfectly balanced for your sanctuary.
-      </motion.p>
-      <motion.div 
-        className="search-wrapper"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.8, duration: 0.6 }}
-      >
-        <span className="material-symbols-outlined search-icon">search</span>
-        <input
-          type="text"
-          placeholder="Search by name..."
-          className="search-input"
-          value={searchQuery}
-          onChange={(e) => onSearch(e.target.value)}
+    
+    <div id="about" className="container hero-grid" style={{ position: 'relative', zIndex: 1, paddingTop: '80px', paddingBottom: '80px' }}>
+      <section className="hero text-left" style={{ padding: 0 }}>
+        <h1 className="hero-title" style={{ margin: '0 0 24px 0', textAlign: 'left', maxWidth: 'none' }}>
+          <FlipText>Your Serene Space Starts Here</FlipText>
+        </h1>
+        <motion.p 
+          className="hero-subtitle"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+          style={{ margin: '0 0 32px 0', maxWidth: 'none', textAlign: 'left' }}
+        >
+          CozyPixels is a curated collection of minimalist and serene wallpapers. 
+          Designed to bring a sense of calm and focus to your digital workspace. 
+          Every pixel is chosen with intention, every palette crafted for harmony.
+        </motion.p>
+      </section>
+
+      <div className="hero-social-card-wrapper">
+        <SocialCard
+          title="Creator"
+          name="@yadavnikhil03"
+          image="https://github.com/yadavnikhil03.png"
+          pitch="Building tools and assets for a more peaceful digital life. Join us in creating a more mindful web."
+          icon={<LuSparkles />}
+          buttons={[
+            { label: 'GitHub', icon: <LuGithub />, link: 'https://github.com/yadavnikhil03' },
+            { label: 'Website', icon: <LuGlobe />, link: 'https://cozy-pixels.vercel.app/' },
+          ]}
         />
-      </motion.div>
-    </section>
+      </div>
+    </div>
   </div>
 );
 
@@ -166,50 +222,47 @@ const CategoryFilter = ({ categories, selected, onSelect, counts }) => (
 
 
 const ExtensionPromo = ({ onOpenModal }) => (
-  <section className="container extension-promo">
+  <motion.section
+    className="container extension-promo"
+    variants={promoSectionVariants}
+    initial="hidden"
+    whileInView="visible"
+    viewport={{ once: true, amount: 0.3 }}
+  >
     <motion.div 
       className="promo-card"
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
+      variants={promoItemVariants}
+      whileHover={{ y: -6, scale: 1.01 }}
+      transition={{ type: 'spring', stiffness: 180, damping: 18 }}
     >
       <div className="promo-content">
         <motion.div 
           className="section-eyebrow"
-          initial={{ opacity: 0, x: -20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
+          variants={promoItemVariants}
         >
-          Premium Feature
+          Browser Extension
         </motion.div>
         <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          variants={promoItemVariants}
         >
-          The Cozy Engine
+          CozyPixels for New Tabs
         </motion.h2>
         <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
+          variants={promoItemVariants}
         >
-          Bring the serenity of CozyPixels to your browser. Our official extension 
-          replaces your New Tab with a rotating digital sanctuary.
+          Transform your new tab into a serene digital sanctuary with daily curated wallpapers and a calm layout.
         </motion.p>
         
         <ul className="promo-features">
           {[
-            { icon: <LuSparkles />, text: "Auto-rotating minimalist vibes" },
-            { icon: <LuWind />, text: "Built-in focus & breathing tools" },
-            { icon: <LuRotateCcw />, text: "Daily sanctuary refreshes" }
+            { icon: <LuSparkles />, text: "Fast install and instant startup" },
+            { icon: <LuWind />, text: "Focused new-tab layout" },
+            { icon: <LuRotateCcw />, text: "Wallpaper rotation controls" }
           ].map((item, i) => (
             <motion.li 
               key={i}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5 + (i * 0.1) }}
+              variants={promoItemVariants}
+              whileHover={{ x: 4 }}
             >
               {item.icon} {item.text}
             </motion.li>
@@ -218,17 +271,26 @@ const ExtensionPromo = ({ onOpenModal }) => (
 
         <motion.div 
           className="promo-actions"
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.8 }}
+          variants={promoItemVariants}
         >
-          <button className="promo-btn primary" onClick={onOpenModal}>
-            Install Cozy Engine Instantly
-          </button>
+          <motion.button
+            className="promo-btn primary"
+            onClick={onOpenModal}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Install Extension
+          </motion.button>
         </motion.div>
       </div>
 
-      <div className="promo-visual">
+      <motion.div
+        className="promo-visual"
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <div className="promo-orb promo-orb-a" />
+        <div className="promo-orb promo-orb-b" />
         <motion.div 
           className="promo-floating-elements"
           animate={{ 
@@ -247,14 +309,16 @@ const ExtensionPromo = ({ onOpenModal }) => (
               <div className="browser-dot green"></div>
             </div>
             <div className="browser-body">
-              <motion.div 
-                className="mock-time"
-                animate={{ opacity: [0.8, 1, 0.8] }}
-                transition={{ duration: 3, repeat: Infinity }}
-              >
-                14:20
-              </motion.div>
-              <div className="mock-greeting">Breathe in...</div>
+              <div className="browser-body-shell">
+                <div className="browser-body-label">New Tab</div>
+                <div className="browser-body-title">CozyPixels</div>
+                <div className="browser-body-copy">A calm default surface for your digital sanctuary.</div>
+                <div className="browser-body-row">
+                  <span>Refresh</span>
+                  <span>Focus</span>
+                  <span>Settings</span>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -264,20 +328,103 @@ const ExtensionPromo = ({ onOpenModal }) => (
             animate={{ y: [0, 10, 0], x: [0, 5, 0] }}
             transition={{ duration: 4, repeat: Infinity }}
           >
-            <LuWind /> Focus Active
+            <LuWind /> New Tab UI
           </motion.div>
           <motion.div 
             className="floating-ui f-2"
             animate={{ y: [0, -10, 0], x: [0, -5, 0] }}
             transition={{ duration: 5, repeat: Infinity, delay: 1 }}
           >
-            <LuSparkles /> Auto-Sync
+            <LuSparkles /> Wallpaper Sync
           </motion.div>
         </motion.div>
-      </div>
+      </motion.div>
     </motion.div>
-  </section>
+  </motion.section>
 );
+
+
+const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
+  const containerRef = useRef(null);
+  const [carouselWidth, setCarouselWidth] = useState(0);
+  
+  useEffect(() => {
+    if (containerRef.current) {
+      setCarouselWidth(containerRef.current.scrollWidth - containerRef.current.offsetWidth);
+    }
+  }, [wallpapers]);
+
+  const featured = wallpapers.slice(0, 6);
+  if (!featured.length) return null;
+
+  return (
+    <section className="showcase-section-drag">
+      <div className="showcase-intro-block">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="showcase-intro-label"
+        >
+          Curated Collection
+        </motion.div>
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+          className="showcase-intro-title"
+        >
+          The Serene Gallery
+        </motion.h2>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          className="showcase-intro-desc"
+        >
+          Swipe or drag to explore our hand-picked selection of minimalist artworks, perfectly framed for your digital space.
+        </motion.p>
+      </div>
+
+      <motion.div ref={containerRef} className="showcase-drag-container">
+        <motion.div 
+          drag="x"
+          dragConstraints={{ right: 0, left: -carouselWidth }}
+          whileTap={{ cursor: "grabbing" }}
+          className="showcase-drag-track"
+        >
+          {featured.map((wp) => {
+            return (
+              <motion.div
+                key={wp.path}
+                className="showcase-card"
+                onClick={() => onPreview(wp)}
+                whileHover={{ scale: 0.98 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                <div className="showcase-card-overlay" />
+                <img
+                  src={`${STATIC_URL}${wp.path}`}
+                  alt={wp.name}
+                  className="showcase-card-img"
+                  draggable="false"
+                />
+                <div className="showcase-card-content">
+                  <p className="showcase-card-cat">{wp.category}</p>
+                  <p className="showcase-card-title">
+                    {wp.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+      </motion.div>
+    </section>
+  );
+};
 
 
 const WallpaperCard = ({ wallpaper, onPreview }) => {
@@ -403,54 +550,7 @@ const Lightbox = ({ wallpaper, onClose, onSanctuary }) => {
 };
 
 
-const About = () => (
-  <section id="about" className="container about-section">
-    <div className="about-copy">
-      <div className="section-eyebrow">About CozyPixels</div>
-      <h2>Digital Hygge for Your Sanctuary</h2>
-      <p>
-        CozyPixels is a curated collection of minimalist and serene wallpapers. 
-        Designed to bring a sense of calm and focus to your digital workspace. 
-        Every pixel is chosen with intention, every palette crafted for harmony.
-      </p>
-    </div>
-    <div className="about-card-wrap">
-      <SocialCard
-        title="Creator"
-        name="@yadavnikhil03"
-        image="https://github.com/yadavnikhil03.png"
-        pitch="Building tools and assets for a more peaceful digital life. Join us in creating a more mindful web."
-        icon={<LuSparkles />}
-        buttons={[
-          { label: 'GitHub', icon: <LuGithub />, link: 'https://github.com/yadavnikhil03' },
-          { label: 'Website', icon: <LuGlobe />, link: 'https://github.com/yadavnikhil03' },
-        ]}
-      />
-    </div>
-  </section>
-);
 
-
-/* ==========================================
-   CUSTOM LOADER
-   ========================================== */
-const CustomLoader = () => (
-  <div className="loader-fullscreen-overlay">
-    <div className="loader-wrapper">
-      <span className="loader-letter">L</span>
-      <span className="loader-letter">o</span>
-      <span className="loader-letter">a</span>
-      <span className="loader-letter">d</span>
-      <span className="loader-letter">i</span>
-      <span className="loader-letter">n</span>
-      <span className="loader-letter">g</span>
-      <span className="loader-letter">.</span>
-      <span className="loader-letter">.</span>
-      <span className="loader-letter">.</span>
-      <div className="loader"></div>
-    </div>
-  </div>
-);
 
 
 const Footer = () => (
@@ -492,13 +592,19 @@ const ScrollToTop = () => {
 
 function App() {
   const [wallpapers, setWallpapers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [category, setCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [previewWallpaper, setPreviewWallpaper] = useState(null);
   const [sanctuaryWallpaper, setSanctuaryWallpaper] = useState(null);
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [browserInfo, setBrowserInfo] = useState({ name: 'Chrome', url: 'chrome://extensions' });
+  
+  const [displayCount, setDisplayCount] = useState(30);
+  const loaderRef = useRef(null);
+
+  useEffect(() => {
+    setDisplayCount(30);
+  }, [category, searchQuery]);
 
   const enterSanctuary = (wallpaper) => {
     setPreviewWallpaper(null);
@@ -531,40 +637,21 @@ function App() {
   };
 
   useEffect(() => {
-    // Fail-safe: Always hide loader after 5 seconds max
-    const failSafeTimeout = setTimeout(() => {
-      setLoading((prev) => {
-        if (prev) console.warn('Loading timed out - forcing UI display');
-        return false;
-      });
-    }, 5000);
-
-    const minLoadTime = new Promise(resolve => setTimeout(resolve, 800));
-    
     fetch(`${API_URL}/wallpapers`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
       })
       .then(data => {
-        return Promise.all([Promise.resolve(data), minLoadTime]);
-      })
-      .then(([data]) => {
         if (Array.isArray(data)) {
           setWallpapers(data);
         } else {
           console.error('Data is not an array:', data);
         }
-        setLoading(false);
-        clearTimeout(failSafeTimeout);
       })
       .catch((err) => {
         console.error('Error fetching wallpapers:', err);
-        setLoading(false);
-        clearTimeout(failSafeTimeout);
       });
-
-    return () => clearTimeout(failSafeTimeout);
   }, []);
 
   
@@ -589,6 +676,21 @@ function App() {
       );
     });
 
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setDisplayCount(prev => prev + 30);
+      }
+    }, { threshold: 0.1, rootMargin: '400px' });
+    
+    const currentRef = loaderRef.current;
+    if (currentRef) observer.observe(currentRef);
+    
+    return () => {
+      if (currentRef) observer.unobserve(currentRef);
+    };
+  }, [filteredWallpapers.length]);
+
   const closeLightbox = useCallback(() => setPreviewWallpaper(null), []);
 
 
@@ -596,8 +698,32 @@ function App() {
     <div>
       <Header totalCount={wallpapers.length} />
       <main>
-        <Hero searchQuery={searchQuery} onSearch={setSearchQuery} />
+        <Hero />
+        
+        <HorizontalShowcase 
+          wallpapers={wallpapers} 
+          onPreview={setPreviewWallpaper} 
+        />
         <ExtensionPromo onOpenModal={handleExtensionInstall} />
+
+        <div className="container" style={{ paddingTop: '8px', paddingBottom: '16px' }}>
+          <motion.div 
+            className="search-wrapper"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <span className="material-symbols-outlined search-icon">search</span>
+            <input
+              type="text"
+              placeholder="Search wallpapers..."
+              className="search-input"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </motion.div>
+        </div>
+
         <CategoryFilter
           categories={categories}
           selected={category}
@@ -607,7 +733,7 @@ function App() {
         <section className="container gallery" aria-label="Wallpapers collection">
           <h2 className="sr-only">High Resolution Wallpaper Gallery</h2>
           <AnimatePresence mode="popLayout">
-            {filteredWallpapers.map((w) => (
+            {filteredWallpapers.slice(0, displayCount).map((w) => (
               <WallpaperCard
                 key={w.path}
                 wallpaper={w}
@@ -615,13 +741,18 @@ function App() {
               />
             ))}
           </AnimatePresence>
-          {!loading && filteredWallpapers.length === 0 && (
+          {filteredWallpapers.length > displayCount && (
+            <div ref={loaderRef} className="loader" style={{ gridColumn: '1 / -1', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined spin" style={{ animation: 'spin 1s linear infinite' }}>sync</span> 
+              <span style={{ marginLeft: '12px' }}>Loading more wallpapers...</span>
+            </div>
+          )}
+          {filteredWallpapers.length === 0 && (
             <div className="loader" style={{ gridColumn: '1 / -1' }}>
               No wallpapers found — try a different search or category.
             </div>
           )}
         </section>
-        <About />
       </main>
       <Footer />
       <ScrollToTop />
@@ -650,7 +781,6 @@ function App() {
           />
         )}
       </AnimatePresence>
-      {loading && <CustomLoader />}
     </div>
   );
 }
