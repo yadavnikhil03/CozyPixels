@@ -23,3 +23,27 @@ document.getElementById('rotate-btn').addEventListener('click', () => {
 document.getElementById('site-btn').addEventListener('click', () => {
   chrome.tabs.create({ url: 'https://cozypixels.vercel.app' });
 });
+
+// Load current rotation interval
+chrome.storage.local.get(['rotationInterval'], (result) => {
+  if (result.rotationInterval) {
+    document.getElementById('interval-select').value = result.rotationInterval;
+  }
+});
+
+// Update rotation interval
+document.getElementById('interval-select').addEventListener('change', (e) => {
+  const newInterval = e.target.value;
+  chrome.runtime.sendMessage({ action: "updateTimer", interval: newInterval }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error("Popup Error:", chrome.runtime.lastError);
+    } else if (response && response.success) {
+      const selectEl = document.getElementById('interval-select');
+      const originalColor = selectEl.style.color;
+      selectEl.style.color = '#4CAF50'; // Green success feedback
+      setTimeout(() => {
+        selectEl.style.color = originalColor;
+      }, 1000);
+    }
+  });
+});

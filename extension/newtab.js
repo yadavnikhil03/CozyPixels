@@ -1,21 +1,23 @@
 async function updateUI() {
-  const result = await chrome.storage.local.get(['currentWallpaper', 'currentMeta']);
-  if (result.currentWallpaper) {
-    console.log('Loading wallpaper:', result.currentWallpaper);
+  const result = await chrome.storage.local.get(['cachedImage', 'currentWallpaper', 'currentMeta']);
+  
+  const targetImage = result.cachedImage || result.currentWallpaper;
+
+  if (targetImage) {
     const bg = document.getElementById('sanctuary-bg');
 
     // Create an image object to check if it actually loads
     const img = new Image();
     img.onload = () => {
-      bg.style.backgroundImage = `url("${result.currentWallpaper}")`;
+      bg.style.backgroundImage = `url("${targetImage}")`;
       bg.style.opacity = 1;
     };
     img.onerror = () => {
-      console.error('Failed to load wallpaper:', result.currentWallpaper);
+      console.error('Failed to load wallpaper');
       bg.style.backgroundColor = '#1e1c0a'; // Dark fallback
       bg.style.opacity = 1;
     };
-    img.src = result.currentWallpaper;
+    img.src = targetImage;
   }
 
   

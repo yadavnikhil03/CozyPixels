@@ -1,11 +1,32 @@
 const DEFAULT_API = 'https://cozypixels.onrender.com/api/wallpapers';
 const STATIC_BASE = 'https://cozypixels.onrender.com';
 
+// Default interval in minutes
+const DEFAULT_INTERVAL = 60;
+
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
 // Initial fetch and rotation setup
-chrome.runtime.onInstalled.addListener(() => {
+chrome.runtime.onInstalled.addListener(async () => {
   console.log('Cozy Engine initialized');
+  
+  // Set default interval if not exists
+  const result = await chrome.storage.local.get(['rotationInterval']);
+  const interval = result.rotationInterval || DEFAULT_INTERVAL;
+  if (!result.rotationInterval) {
+    await chrome.storage.local.set({ rotationInterval: interval });
+  }
+
   fetchAndSaveWallpapers();
-  chrome.alarms.create('rotateWallpaper', { periodInMinutes: 60 });
+  chrome.alarms.create('rotateWallpaper', { periodInMinutes: interval });
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -23,7 +44,6 @@ async function fetchAndSaveWallpapers() {
     await rotateWallpaper();
   } catch (err) {
     console.error('Cozy Engine: Failed to fetch wallpapers', err);
-    // Fallback to local if production fails during dev
     fetch('http://localhost:3001/api/wallpapers')
       .then(res => res.json())
       .then(data => chrome.storage.local.set({ allWallpapers: data }))
@@ -42,12 +62,30 @@ async function rotateWallpaper() {
         ? selected.path 
         : `${STATIC_BASE}${selected.path}`;
 
-      await chrome.storage.local.set({ 
-        currentWallpaper: wallpaperUrl,
-        currentMeta: selected
-      });
+      // Download and cache the image as a Base64 string for instant loading
+      try {
+        const imgResponse = await fetch(wallpaperUrl);
+        const blob = await imgResponse.blob();
+        const buffer = await blob.arrayBuffer();
+        const base64 = arrayBufferToBase64(buffer);
+        const dataUrl = `data:${blob.type};base64,${base64}`;
 
-      chrome.runtime.sendMessage({ action: "refreshUI" }).catch(() => {});
+        await chrome.storage.local.set({ 
+          currentWallpaper: wallpaperUrl,
+          cachedImage: dataUrl,
+          currentMeta: selected
+        });
+
+        chrome.runtime.sendMessage({ action: "refreshUI" }).catch(() => {});
+      } catch (imgErr) {
+        console.error('Failed to download image for caching:', imgErr);
+        // Fallback to just saving the URL if caching fails
+        await chrome.storage.local.set({ 
+          currentWallpaper: wallpaperUrl,
+          cachedImage: null,
+          currentMeta: selected
+        });
+      }
     }
   } catch (err) {
     console.error('Cozy Engine: Rotation error', err);
@@ -58,5 +96,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "triggerRotation") {
     rotateWallpaper().then(() => sendResponse({ success: true }));
     return true; 
+  }
+  
+  if (request.action === "updateTimer") {
+    const newInterval = parseInt(request.interval, 10);
+    if (newInterval && newInterval > 0) {
+      chrome.storage.local.set({ rotationInterval: newInterval }).then(() => {
+        chrome.alarms.clear('rotateWallpaper', () => {
+          chrome.alarms.create('rotateWallpaper', { periodInMinutes: newInterval });
+          sendResponse({ success: true });
+        });
+      });
+      return true;
+    }
   }
 });

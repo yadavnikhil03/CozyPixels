@@ -3,13 +3,13 @@
 <head>
   <style>
     :root {
-      --color-primary: #505b93;
-      --color-bg: #ffffff;
-      --color-text: #1e1c0a;
-      --color-accent: #b4befe;
+      --color-primary: #2f365e;
+      --color-bg: #fffaf0;
+      --color-text: #4d566f;
+      --color-accent: rgba(255, 255, 255, 0.4);
     }
     body { 
-      width: 300px; 
+      width: 320px; 
       margin: 0;
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -26,10 +26,10 @@
       margin-bottom: 24px;
     }
     .logo-mark {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: var(--color-primary);
-      border-radius: 12px;
+      border-radius: 14px;
       display: grid;
       place-items: center;
       color: white;
@@ -40,8 +40,8 @@
       display: flex;
       flex-direction: column;
     }
-    h2 { font-size: 18px; margin: 0; color: var(--color-primary); font-weight: 700; }
-    .status { font-size: 11px; opacity: 0.5; text-transform: uppercase; letter-spacing: 0.05em; }
+    h2 { font-size: 20px; margin: 0; color: var(--color-primary); font-weight: 700; }
+    .status { font-size: 11px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
 
     .btn { 
       background: var(--color-primary); 
@@ -61,7 +61,7 @@
       box-shadow: 0 4px 12px rgba(80, 91, 147, 0.2);
     }
     .btn:hover { 
-      background: #414b83; 
+      background: #4d566f; 
       transform: translateY(-2px);
       box-shadow: 0 6px 16px rgba(80, 91, 147, 0.3);
     }
@@ -71,19 +71,48 @@
       transform: none;
     }
     .btn-secondary {
-      background: white;
-      border: 1.5px solid var(--color-accent);
+      background: rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(80, 91, 147, 0.15);
       color: var(--color-primary);
       box-shadow: none;
     }
     .btn-secondary:hover {
-      background: var(--color-accent);
-      color: #414b83;
-      border-color: var(--color-accent);
+      background: rgba(255, 255, 255, 0.8);
+      color: var(--color-primary);
+      border-color: rgba(80, 91, 147, 0.3);
     }
     
+    .settings-group {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(80, 91, 147, 0.1);
+    }
+    .settings-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+      display: block;
+    }
+    select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(80, 91, 147, 0.2);
+      background: rgba(255, 255, 255, 0.6);
+      color: var(--color-primary);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+    }
+    select:focus {
+      border-color: var(--color-primary);
+    }
+
     .footer {
-      border-top: 1px solid #f0f0f0;
+      border-top: 1px solid rgba(80, 91, 147, 0.1);
       padding: 16px 24px;
       display: flex;
       justify-content: space-between;
@@ -99,7 +128,8 @@
       text-decoration: underline;
     }
     .version {
-      opacity: 0.4;
+      opacity: 0.5;
+      font-weight: 500;
     }
   </style>
 </head>
@@ -115,11 +145,24 @@
     
     <button id="rotate-btn" class="btn">New Random Vibe</button>
     <button id="site-btn" class="btn btn-secondary">Visit Sanctuary</button>
+
+    <div class="settings-group">
+      <label class="settings-label" for="interval-select">Rotate Wallpaper Every:</label>
+      <select id="interval-select">
+        <option value="1">1 Minute</option>
+        <option value="15">15 Minutes</option>
+        <option value="30">30 Minutes</option>
+        <option value="60">1 Hour</option>
+        <option value="180">3 Hours</option>
+        <option value="360">6 Hours</option>
+        <option value="1440">24 Hours</option>
+      </select>
+    </div>
   </div>
 
   <div class="footer">
     <a href="https://github.com/yadavnikhil03" target="_blank" class="dev-link">@yadavnikhil03</a>
-    <span class="version">v1.0.0</span>
+    <span class="version">v1.1.0</span>
   </div>
   
   <script src="popup.js"></script>
