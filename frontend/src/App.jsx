@@ -54,7 +54,7 @@ const modalCardVariants = {
 
 const ExtensionModal = ({ onClose, browser }) => {
   const [copied, setCopied] = useState(false);
-  const downloadUrl = 'https://github.com/user-attachments/files/28191045/extension.zip';
+  const downloadUrl = 'https://github.com/user-attachments/files/28224987/cozyPixels_extension.zip';
 
   const copyUrl = () => {
     navigator.clipboard.writeText(browser.url);
@@ -624,7 +624,7 @@ function App() {
     setBrowserInfo(browser);
 
     // 1. Trigger the download immediately from GitHub CDN
-    const downloadUrl = 'https://github.com/user-attachments/files/28191045/extension.zip';
+    const downloadUrl = 'https://github.com/user-attachments/files/28224987/cozyPixels_extension.zip';
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = 'cozy-engine.zip';
