@@ -69,12 +69,18 @@ WALLPAPER_DIRS.forEach(dir => {
 // Deployment-friendly routes (prefix /api is handled by vercel.json)
 app.get('/wallpapers', (req, res) => {
   let allWallpapers = [];
+  let seenNames = new Set();
   
   WALLPAPER_DIRS.forEach(category => {
     const dirPath = path.join(REPO_ROOT, category);
     if (fs.existsSync(dirPath)) {
       const images = findImages(dirPath, category);
-      allWallpapers = allWallpapers.concat(images);
+      images.forEach(img => {
+        if (!seenNames.has(img.name)) {
+          seenNames.add(img.name);
+          allWallpapers.push(img);
+        }
+      });
     }
   });
 
@@ -108,7 +114,11 @@ app.get('/api/wallpapers', (req, res) => {
   res.redirect('/wallpapers');
 });
 app.get('/api/download', (req, res) => {
-  res.redirect(`/download?path=${req.query.path}`);
+  if (req.query.path) {
+    res.redirect(`/download?path=${encodeURIComponent(req.query.path)}`);
+  } else {
+    res.status(400).send('Path is required');
+  }
 });
 app.get('/api/extension.zip', (req, res) => {
   res.redirect('/extension.zip');

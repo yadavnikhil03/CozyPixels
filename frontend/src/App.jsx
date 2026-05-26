@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useDeferredValue } from 'react';
 import { motion, AnimatePresence, useMotionValueEvent, useScroll, useTransform } from 'motion/react';
-import { LuGithub, LuTwitter, LuGlobe, LuSparkles, LuWind, LuRotateCcw, LuChevronRight, LuCopy, LuCheck } from 'react-icons/lu';
+import { LuGithub, LuTwitter, LuGlobe, LuSparkles, LuWind, LuRotateCcw, LuChevronRight, LuCopy, LuCheck, LuImage, LuTrees, LuBuilding, LuMoon, LuSun, LuPalette, LuLayoutGrid } from 'react-icons/lu';
 import SocialCard from './components/forgeui/social-card';
 import FlipText from './components/forgeui/flip-text';
 import SanctuaryMode from './components/forgeui/sanctuary-mode';
@@ -61,7 +61,7 @@ const ExtensionModal = ({ onClose, browser }) => {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-  
+
   return (
     <motion.div
       className="lightbox-overlay extension-modal-overlay"
@@ -79,7 +79,7 @@ const ExtensionModal = ({ onClose, browser }) => {
         <button className="lightbox-close" onClick={onClose}>
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
         </button>
-        
+
         <div className="modal-header">
           <div className="modal-icon">
             <LuSparkles />
@@ -106,7 +106,7 @@ const ExtensionModal = ({ onClose, browser }) => {
             <div className="step-text">
               <strong>Load Unpacked Sanctuary</strong>
               <p>
-                Enable <strong>Developer mode</strong>, click <strong>Load unpacked</strong>, 
+                Enable <strong>Developer mode</strong>, click <strong>Load unpacked</strong>,
                 and select the folder you just downloaded.
               </p>
             </div>
@@ -151,57 +151,115 @@ const Header = ({ totalCount }) => {
 };
 
 
-const Hero = () => (
-  <div className="hero-wrapper">
-    <div className="hero-video-container">
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        className="hero-video-native"
-      >
-        <source src="https://cdn.coverr.co/videos/coverr-beautiful-cloudscape-5426/1080p.mp4" type="video/mp4" />
-      </video>
-    </div>
-    <div className="hero-video-overlay" />
-    
-    <div id="about" className="container hero-grid" style={{ position: 'relative', zIndex: 2, paddingTop: '80px', paddingBottom: '80px' }}>
-      <section className="hero text-left" style={{ padding: 0 }}>
-        <h1 className="hero-title" style={{ margin: '0 0 24px 0', textAlign: 'left', maxWidth: 'none' }}>
-          <FlipText>Your Serene Space Starts Here</FlipText>
-        </h1>
-        <motion.p 
-          className="hero-subtitle"
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.8 }}
-          style={{ margin: '0 0 32px 0', maxWidth: 'none', textAlign: 'left' }}
-        >
-          CozyPixels is a curated collection of minimalist and serene wallpapers. 
-          Designed to bring a sense of calm and focus to your digital workspace. 
-          Every pixel is chosen with intention, every palette crafted for harmony.
-        </motion.p>
-      </section>
+const HERO_WALLPAPERS = [
+  'Nord/Pixel%20Art/pixelcity.png',
+  'Nord/Pixel%20Art/pixelmoon.png',
+  'Catppuccin/Abstract%20%26%20Artistic/galaxy-waves.jpg',
+  'Catppuccin/Abstract%20%26%20Artistic/cartoon-castle.png',
+  'Catppuccin/Abstract%20%26%20Artistic/dark-waves.jpg',
+  'Catppuccin/Abstract%20%26%20Artistic/droplets.png',
+  'Nord/Abstract%20%26%20Artistic/ign_FluidifiedST-1.png',
+  'Nord/Abstract%20%26%20Artistic/ign_MaterialMountains-1.png',
+  'Nord/Abstract%20%26%20Artistic/ign_nordic_rose.png',
+];
 
-      <div className="hero-social-card-wrapper">
-        <SocialCard
-          title="Creator"
-          name="@yadavnikhil03"
-          image="https://github.com/yadavnikhil03.png"
-          pitch="Building tools and assets for a more peaceful digital life. Join us in creating a more mindful web."
-          icon={<LuSparkles />}
-          buttons={[
-            { label: 'GitHub', icon: <LuGithub />, link: 'https://github.com/yadavnikhil03' },
-            { label: 'Website', icon: <LuGlobe />, link: 'https://cozy-pixels.vercel.app/' },
-          ]}
-        />
-      </div>
+const Hero = ({ totalCount = 0 }) => (
+  <div className="hero-wrapper">
+    <div className="hero-bg-gradient" />
+    <div className="hero-orb hero-orb-1" />
+    <div className="hero-orb hero-orb-2" />
+    <div className="hero-orb hero-orb-3" />
+
+    <div id="about" className="hero-split-container">
+      {/* LEFT: Text content */}
+      <motion.div
+        className="hero-left"
+        initial={{ opacity: 0, x: -30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <h1 className="hero-title-split">
+          <span className="hero-title-line">Your <span className="hero-title-accent">Serene</span></span>
+          <span className="hero-title-line">Space Starts Here</span>
+        </h1>
+
+        <motion.p
+          className="hero-subtitle-split"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4, duration: 0.7 }}
+        >
+          Minimalist wallpapers, obsessively curated. Pick your vibe,
+          transform your desktop into a place you actually want to look at.
+        </motion.p>
+
+        <motion.div
+          className="hero-actions-row"
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.7 }}
+        >
+          <a href="#gallery" className="hero-cta-primary">
+            Browse Wallpapers <LuChevronRight />
+          </a>
+          <a
+            href="https://github.com/yadavnikhil03"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="creator-pill-badge"
+          >
+            <img src="https://github.com/yadavnikhil03.png" alt="@yadavnikhil03" className="creator-pill-avatar" />
+            <span className="creator-pill-text">by <strong>@yadavnikhil03</strong></span>
+            <LuGithub className="creator-pill-icon" />
+          </a>
+        </motion.div>
+      </motion.div>
+
+      {/* RIGHT: Wallpaper mosaic */}
+      <motion.div
+        className="hero-right"
+        initial={{ opacity: 0, x: 30 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+      >
+        <div className="hero-mosaic">
+          {HERO_WALLPAPERS.slice(0, 9).map((path, i) => (
+            <motion.div
+              key={path}
+              className={`mosaic-card mosaic-card-${i}`}
+              whileHover={{ scale: 1.04, zIndex: 10 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0, transition: { delay: 0.3 + i * 0.06, duration: 0.6 } }}
+            >
+              <img
+                src={`${STATIC_URL}/${path}`}
+                alt={`wallpaper ${i + 1}`}
+                className="mosaic-img"
+                loading="eager"
+                decoding="async"
+              />
+            </motion.div>
+          ))}
+        </div>
+        <div className="hero-mosaic-fade-bottom" />
+        <div className="hero-mosaic-fade-right" />
+      </motion.div>
     </div>
   </div>
 );
 
-
+const getCategoryIcon = (cat) => {
+  switch (cat.toLowerCase()) {
+    case 'all': return <LuLayoutGrid />;
+    case 'nature': return <LuTrees />;
+    case 'architecture': case 'city': return <LuBuilding />;
+    case 'dark': case 'night': return <LuMoon />;
+    case 'light': case 'minimal': return <LuSun />;
+    case 'art': case 'abstract': return <LuPalette />;
+    default: return <LuImage />;
+  }
+};
 
 const CategoryFilter = ({ categories, selected, onSelect, counts }) => (
   <nav className="container filters" aria-label="Wallpaper categories">
@@ -210,7 +268,8 @@ const CategoryFilter = ({ categories, selected, onSelect, counts }) => (
       onClick={() => onSelect('All')}
       aria-pressed={selected === 'All'}
     >
-      All Wallpapers
+      <span className="filter-icon">{getCategoryIcon('All')}</span>
+      <span className="filter-text">All Wallpapers</span>
       <span className="filter-count">{counts.total}</span>
     </button>
     {categories.map((cat) => (
@@ -220,7 +279,8 @@ const CategoryFilter = ({ categories, selected, onSelect, counts }) => (
         onClick={() => onSelect(cat)}
         aria-pressed={selected === cat}
       >
-        {cat}
+        <span className="filter-icon">{getCategoryIcon(cat)}</span>
+        <span className="filter-text">{cat}</span>
         <span className="filter-count">{counts[cat] || 0}</span>
       </button>
     ))}
@@ -228,127 +288,117 @@ const CategoryFilter = ({ categories, selected, onSelect, counts }) => (
 );
 
 
-const ExtensionPromo = ({ onOpenModal }) => (
+const MOCKUP_WALLPAPERS = [
+  { path: 'Nord/Pixel%20Art/pixelcity.png', name: 'pixelcity' },
+  { path: 'Nord/Pixel%20Art/pixelmoon.png', name: 'pixelmoon' },
+  { path: 'Nord/Anime%20%26%20Gaming/ign_DynamicFry-1.png', name: 'ign_DynamicFry-1' },
+  { path: 'Catppuccin/Abstract%20%26%20Artistic/galaxy-waves.jpg', name: 'galaxy-waves' },
+  { path: 'Catppuccin/Abstract%20%26%20Artistic/cartoon-castle.png', name: 'cartoon-castle' },
+];
+
+const ExtensionPromo = ({ onOpenModal }) => {
+  const [wallpaperIdx, setWallpaperIdx] = useState(0);
+  const [fade, setFade] = useState(true);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFade(false);
+      setTimeout(() => {
+        setWallpaperIdx(i => (i + 1) % MOCKUP_WALLPAPERS.length);
+        setFade(true);
+      }, 250);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentWallpaper = MOCKUP_WALLPAPERS[wallpaperIdx];
+
+  return (
   <motion.section
-    className="container extension-promo"
+    className="container apple-promo-section"
     variants={promoSectionVariants}
     initial="hidden"
     whileInView="visible"
-    viewport={{ once: true, amount: 0.3 }}
+    viewport={{ once: true, amount: 0.2 }}
   >
-    <motion.div 
-      className="promo-card"
-      variants={promoItemVariants}
-      whileHover={{ y: -6, scale: 1.01 }}
-      transition={{ type: 'spring', stiffness: 180, damping: 18 }}
-    >
-      <div className="promo-content">
-        <motion.div 
-          className="section-eyebrow"
-          variants={promoItemVariants}
-        >
+    <div className="apple-promo-container">
+      <div className="apple-promo-bg-glow"></div>
+      
+      <div className="apple-promo-header">
+        <motion.div className="apple-promo-eyebrow" variants={promoItemVariants}>
           Browser Extension
         </motion.div>
-        <motion.h2
-          variants={promoItemVariants}
-        >
-          CozyPixels for New Tabs
+        <motion.h2 className="apple-promo-title" variants={promoItemVariants}>
+          Your browser.<br/>Reimagined.
         </motion.h2>
-        <motion.p
-          variants={promoItemVariants}
-        >
+        <motion.p className="apple-promo-subtitle" variants={promoItemVariants}>
           Transform your new tab into a serene digital sanctuary with daily curated wallpapers and a calm layout.
         </motion.p>
-        
-        <ul className="promo-features">
-          {[
-            { icon: <LuSparkles />, text: "Fast install and instant startup" },
-            { icon: <LuWind />, text: "Focused new-tab layout" },
-            { icon: <LuRotateCcw />, text: "Wallpaper rotation controls" }
-          ].map((item, i) => (
-            <motion.li 
-              key={i}
-              variants={promoItemVariants}
-              whileHover={{ x: 4 }}
-            >
-              {item.icon} {item.text}
-            </motion.li>
-          ))}
-        </ul>
-
-        <motion.div 
-          className="promo-actions"
+        <motion.button 
+          className="apple-promo-btn" 
+          onClick={onOpenModal}
           variants={promoItemVariants}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          <motion.button
-            className="promo-btn primary"
-            onClick={onOpenModal}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            Install Extension
-          </motion.button>
-        </motion.div>
+          Install Extension
+        </motion.button>
       </div>
 
-      <motion.div
-        className="promo-visual"
-        animate={{ y: [0, -8, 0] }}
-        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+      <motion.div 
+        className="apple-promo-visual"
+        variants={promoItemVariants}
       >
-        <div className="promo-orb promo-orb-a" />
-        <div className="promo-orb promo-orb-b" />
-        <motion.div 
-          className="promo-floating-elements"
-          animate={{ 
-            y: [0, -15, 0],
-          }}
-          transition={{ 
-            duration: 6, 
-            repeat: Infinity, 
-            ease: "easeInOut" 
-          }}
-        >
-          <div className="browser-mockup">
-            <div className="browser-header">
-              <div className="browser-dot red"></div>
-              <div className="browser-dot yellow"></div>
-              <div className="browser-dot green"></div>
+        <div className="apple-browser-mockup">
+          <div className="apple-browser-header">
+            <div className="apple-browser-dots">
+              <span className="dot red"></span>
+              <span className="dot yellow"></span>
+              <span className="dot green"></span>
             </div>
-            <div className="browser-body">
-              <div className="browser-body-shell">
-                <div className="browser-body-label">New Tab</div>
-                <div className="browser-body-title">CozyPixels</div>
-                <div className="browser-body-copy">A calm default surface for your digital sanctuary.</div>
-                <div className="browser-body-row">
-                  <span>Refresh</span>
-                  <span>Focus</span>
-                  <span>Settings</span>
-                </div>
-              </div>
+            <div className="apple-browser-bar"></div>
+          </div>
+          <div 
+            className="apple-browser-body"
+            style={{
+              backgroundImage: `url('${STATIC_URL}/${currentWallpaper.path}')`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: fade ? 1 : 0,
+              transition: 'opacity 0.4s ease',
+            }}
+          >
+            <div className="new-tab-content">
+              <h1 className="new-tab-clock">17:36</h1>
+              <p className="new-tab-quote">Breathe in, breathe out.</p>
+            </div>
+            
+            <div className="new-tab-footer">
+              <span className="new-tab-credit">{currentWallpaper.name}</span>
+              <span className="new-tab-brand">Cozy Engine</span>
             </div>
           </div>
-          
-          {/* Floating UI Elements */}
-          <motion.div 
-            className="floating-ui f-1"
-            animate={{ y: [0, 10, 0], x: [0, 5, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-          >
-            <LuWind /> New Tab UI
-          </motion.div>
-          <motion.div 
-            className="floating-ui f-2"
-            animate={{ y: [0, -10, 0], x: [0, -5, 0] }}
-            transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-          >
-            <LuSparkles /> Wallpaper Sync
-          </motion.div>
-        </motion.div>
+        </div>
       </motion.div>
-    </motion.div>
+
+      <motion.div className="apple-promo-features" variants={promoItemVariants}>
+        <div className="apple-feature-card">
+          <LuSparkles className="feature-icon" />
+          <span>Fast install & startup</span>
+        </div>
+        <div className="apple-feature-card">
+          <LuWind className="feature-icon" />
+          <span>Focused new-tab layout</span>
+        </div>
+        <div className="apple-feature-card">
+          <LuRotateCcw className="feature-icon" />
+          <span>Wallpaper rotation controls</span>
+        </div>
+      </motion.div>
+    </div>
   </motion.section>
-);
+  );
+};
 
 
 const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
@@ -377,7 +427,7 @@ const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
         >
           The Serene Gallery
         </motion.h2>
-        <motion.p 
+        <motion.p
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
@@ -406,6 +456,7 @@ const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
                   className="showcase-card-img"
                   draggable="false"
                   loading="lazy"
+                  decoding="async"
                 />
                 <div className="showcase-card-content">
                   <p className="showcase-card-cat">{wp.category}</p>
@@ -423,7 +474,7 @@ const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
 };
 
 
-const WallpaperCard = ({ wallpaper, onPreview }) => {
+const WallpaperCard = React.memo(({ wallpaper, onPreview, onShowToast }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imageUrl = `${STATIC_URL}${wallpaper.path}`;
@@ -447,20 +498,20 @@ const WallpaperCard = ({ wallpaper, onPreview }) => {
       {!isLoaded && !hasError && (
         <div className="skeleton-card" style={{ position: 'absolute', inset: 0, zIndex: 1 }} />
       )}
-      
+
       {hasError ? (
         <div className="wallpaper-error">
           <span className="material-symbols-outlined">broken_image</span>
           <p>Failed to load</p>
         </div>
       ) : (
-        <img 
-          src={imageUrl} 
-          alt={displayName} 
-          loading="lazy" 
+        <img
+          src={imageUrl}
+          alt={displayName}
+          decoding="async"
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
-          style={{ opacity: isLoaded ? 1 : 0, transition: 'opacity 0.6s ease' }}
+          style={{ opacity: isLoaded ? 1 : 0, transition: 'opacity 0.6s ease', willChange: 'opacity, transform' }}
         />
       )}
 
@@ -475,7 +526,10 @@ const WallpaperCard = ({ wallpaper, onPreview }) => {
               href={downloadUrl}
               download={wallpaper.name}
               className="download-btn"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onShowToast("Wallpaper saved", "download");
+              }}
               title="Download"
             >
               <span className="material-symbols-outlined">download</span>
@@ -485,10 +539,11 @@ const WallpaperCard = ({ wallpaper, onPreview }) => {
       )}
     </motion.div>
   );
-};
+});
 
 
-const Lightbox = ({ wallpaper, onClose, onSanctuary }) => {
+const Lightbox = ({ wallpaper, onClose, onSanctuary, onShowToast }) => {
+  if (!wallpaper) return null;
   const imageUrl = `${STATIC_URL}${wallpaper.path}`;
   const downloadUrl = `${STATIC_URL}${wallpaper.downloadPath}`;
 
@@ -497,7 +552,6 @@ const Lightbox = ({ wallpaper, onClose, onSanctuary }) => {
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
 
-  
   useEffect(() => {
     const handleKey = (e) => {
       if (e.key === 'Escape') onClose();
@@ -512,33 +566,35 @@ const Lightbox = ({ wallpaper, onClose, onSanctuary }) => {
 
   return (
     <div className="lightbox-overlay" onClick={onClose}>
+      <img src={imageUrl} alt="" className="lightbox-ambient-bg" />
       <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
         <button className="lightbox-close" onClick={onClose}>
           <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
         </button>
-        <img src={imageUrl} alt={displayName} />
+        <img src={imageUrl} alt={displayName} className="lightbox-main-img" />
         <div className="lightbox-footer">
           <div className="lightbox-info">
-            {displayName}
-            <span>{wallpaper.category}</span>
+            <span className="lightbox-title" title={displayName}>{displayName}</span>
+            <span className="lightbox-category">{wallpaper.category}</span>
           </div>
           <a
             href={downloadUrl}
             download={wallpaper.name}
             className="lightbox-download"
+            onClick={() => onShowToast("Wallpaper saved", "download")}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>
             Download
-            </a>
-            <button 
+          </a>
+          <button
             className="lightbox-sanctuary-btn"
             onClick={() => onSanctuary(wallpaper)}
             title="Enter Focus Sanctuary"
-            >
+          >
             <LuSparkles />
             Sanctuary
-            </button>
-            </div>
+          </button>
+        </div>
 
       </div>
     </div>
@@ -557,9 +613,6 @@ const Footer = () => (
 );
 
 
-/* ==========================================
-   SCROLL TO TOP BUTTON
-   ========================================== */
 const ScrollToTop = () => {
   const [visible, setVisible] = useState(false);
 
@@ -590,13 +643,24 @@ function App() {
   const [wallpapers, setWallpapers] = useState([]);
   const [category, setCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   const [previewWallpaper, setPreviewWallpaper] = useState(null);
   const [sanctuaryWallpaper, setSanctuaryWallpaper] = useState(null);
   const [showExtensionModal, setShowExtensionModal] = useState(false);
   const [browserInfo, setBrowserInfo] = useState({ name: 'Chrome', url: 'chrome://extensions' });
-  
+  const [toast, setToast] = useState(null);
+
   const [displayCount, setDisplayCount] = useState(30);
   const loaderRef = useRef(null);
+
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (msg, type = 'default') => {
+    setToast({ message: msg, type });
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    toastTimeoutRef.current = setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     setDisplayCount(30);
@@ -605,6 +669,10 @@ function App() {
   const enterSanctuary = (wallpaper) => {
     setPreviewWallpaper(null);
     setSanctuaryWallpaper(`${STATIC_URL}${wallpaper.path}`);
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(e => console.log(e));
+    }
+    showToast("Entering Sanctuary Mode", "sanctuary");
   };
 
   const detectBrowser = () => {
@@ -619,7 +687,6 @@ function App() {
     const browser = detectBrowser();
     setBrowserInfo(browser);
 
-    // 1. Trigger the download immediately from GitHub CDN
     const downloadUrl = 'https://github.com/user-attachments/files/28224987/cozyPixels_extension.zip';
     const link = document.createElement('a');
     link.href = downloadUrl;
@@ -628,7 +695,6 @@ function App() {
     link.click();
     document.body.removeChild(link);
 
-    // 2. Show the dynamic instruction modal (Browsers block opening chrome:// URLs directly)
     setShowExtensionModal(true);
   };
 
@@ -650,7 +716,7 @@ function App() {
       });
   }, []);
 
-  
+
   const categories = Array.isArray(wallpapers) ? [...new Set(wallpapers.map((w) => w.category))] : [];
 
   const counts = {
@@ -664,8 +730,8 @@ function App() {
   const filteredWallpapers = wallpapers
     .filter((w) => category === 'All' || w.category === category)
     .filter((w) => {
-      if (!searchQuery.trim()) return true;
-      const q = searchQuery.toLowerCase();
+      if (!deferredSearchQuery.trim()) return true;
+      const q = deferredSearchQuery.toLowerCase();
       return (
         w.name.toLowerCase().includes(q) ||
         w.category.toLowerCase().includes(q)
@@ -678,10 +744,10 @@ function App() {
         setDisplayCount(prev => prev + 30);
       }
     }, { threshold: 0.1, rootMargin: '400px' });
-    
+
     const currentRef = loaderRef.current;
     if (currentRef) observer.observe(currentRef);
-    
+
     return () => {
       if (currentRef) observer.unobserve(currentRef);
     };
@@ -694,16 +760,16 @@ function App() {
     <div>
       <Header totalCount={wallpapers.length} />
       <main>
-        <Hero />
-        
-        <HorizontalShowcase 
-          wallpapers={wallpapers} 
-          onPreview={setPreviewWallpaper} 
+        <Hero totalCount={wallpapers.length} />
+
+        <HorizontalShowcase
+          wallpapers={wallpapers}
+          onPreview={setPreviewWallpaper}
         />
         <ExtensionPromo onOpenModal={handleExtensionInstall} />
 
-        <div className="container" style={{ paddingTop: '8px', paddingBottom: '16px' }}>
-          <motion.div 
+        <div id="gallery" className="container" style={{ paddingTop: '8px', paddingBottom: '16px' }}>
+          <motion.div
             className="search-wrapper"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -734,12 +800,13 @@ function App() {
                 key={w.path}
                 wallpaper={w}
                 onPreview={setPreviewWallpaper}
+                onShowToast={showToast}
               />
             ))}
           </AnimatePresence>
           {filteredWallpapers.length > displayCount && (
             <div ref={loaderRef} className="loader" style={{ gridColumn: '1 / -1', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="material-symbols-outlined spin" style={{ animation: 'spin 1s linear infinite' }}>sync</span> 
+              <span className="material-symbols-outlined spin" style={{ animation: 'spin 1s linear infinite' }}>sync</span>
               <span style={{ marginLeft: '12px' }}>Loading more wallpapers...</span>
             </div>
           )}
@@ -754,29 +821,55 @@ function App() {
       <ScrollToTop />
       <AnimatePresence>
         {previewWallpaper && (
-          <Lightbox 
-            wallpaper={previewWallpaper} 
-            onClose={closeLightbox} 
+          <Lightbox
+            wallpaper={previewWallpaper}
+            onClose={closeLightbox}
             onSanctuary={enterSanctuary}
+            onShowToast={showToast}
           />
         )}
       </AnimatePresence>
       <AnimatePresence>
         {sanctuaryWallpaper && (
-          <SanctuaryMode 
-            wallpaper={sanctuaryWallpaper} 
-            onClose={() => setSanctuaryWallpaper(null)} 
+          <SanctuaryMode
+            wallpaper={sanctuaryWallpaper}
+            onClose={() => {
+              setSanctuaryWallpaper(null);
+              if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(e => console.log(e));
+              }
+            }}
           />
         )}
       </AnimatePresence>
       <AnimatePresence>
         {showExtensionModal && (
-          <ExtensionModal 
+          <ExtensionModal
             browser={browserInfo}
-            onClose={() => setShowExtensionModal(false)} 
+            onClose={() => setShowExtensionModal(false)}
           />
         )}
       </AnimatePresence>
+
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className="dynamic-island-toast"
+            initial={{ opacity: 0, x: "-50%", y: -40, scale: 0.8, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, x: "-50%", y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, x: "-50%", y: -40, scale: 0.8, filter: 'blur(10px)' }}
+            transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+          >
+            <div className="dynamic-island-content">
+              <span className="dynamic-island-icon">
+                {toast.type === 'download' ? <LuCheck /> : <LuSparkles />}
+              </span>
+              <span className="dynamic-island-text">{toast.message}</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

@@ -15,6 +15,11 @@ const SanctuaryMode = ({ wallpaper, onClose }) => {
   const timerRef = useRef(null);
   const controlsTimeoutRef = useRef(null);
 
+  // Sync initial fullscreen state
+  useEffect(() => {
+    setIsFullscreen(!!document.fullscreenElement);
+  }, []);
+
   // Timer Logic
   useEffect(() => {
     if (isActive && timeLeft > 0) {
