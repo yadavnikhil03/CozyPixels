@@ -1803,6 +1803,43 @@ html {
     padding-bottom: 52px;
   }
 
+  .hero-wrapper {
+    min-height: auto;
+    padding-top: 72px;
+  }
+
+  .hero-split-container {
+    grid-template-columns: 1fr;
+    padding: 40px var(--spacing-margin-mobile) 48px;
+    gap: 0;
+  }
+
+  .hero-right {
+    display: none;
+  }
+
+  .hero-title-split {
+    font-size: clamp(2.8rem, 10vw, 4rem);
+    letter-spacing: -0.04em;
+  }
+
+  .hero-subtitle-split {
+    font-size: 16px;
+    max-width: 100%;
+    margin: 16px 0 28px 0;
+  }
+
+  .hero-actions-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .hero-cta-primary {
+    padding: 14px 24px;
+    font-size: 14px;
+  }
+
   .hero h1 {
     max-width: 10ch;
     letter-spacing: -0.04em;
