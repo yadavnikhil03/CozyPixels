@@ -99,6 +99,10 @@ h1, h2, h3, .font-display {
   font-weight: 500;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

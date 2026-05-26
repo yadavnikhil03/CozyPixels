@@ -410,6 +410,7 @@ const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
                   alt={wp.name}
                   className="showcase-card-img"
                   draggable="false"
+                  loading="lazy"
                 />
                 <div className="showcase-card-content">
                   <p className="showcase-card-cat">{wp.category}</p>

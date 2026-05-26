@@ -1,0 +1,17 @@
+{
+  "name": "CozyPixels",
+  "short_name": "CozyPixels",
+  "description": "Minimalist Wallpapers & Digital Sanctuaries",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fffae2",
+  "theme_color": "#505b93",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
