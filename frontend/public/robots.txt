@@ -20,4 +20,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://cozypixels.vercel.app/sitemap.xml
+Sitemap: https://cozy-pixels.vercel.app/sitemap.xml
