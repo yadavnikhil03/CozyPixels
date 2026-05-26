@@ -153,13 +153,20 @@ const Header = ({ totalCount }) => {
 
 const Hero = () => (
   <div className="hero-wrapper">
-    <div className="hero-bg" />
-    <div className="hero-blob blob-1" />
-    <div className="hero-blob blob-2" />
-    <div className="hero-blob blob-3" />
-    <div className="hero-blob blob-4" />
+    <div className="hero-video-container">
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="hero-video-native"
+      >
+        <source src="https://cdn.coverr.co/videos/coverr-beautiful-cloudscape-5426/1080p.mp4" type="video/mp4" />
+      </video>
+    </div>
+    <div className="hero-video-overlay" />
     
-    <div id="about" className="container hero-grid" style={{ position: 'relative', zIndex: 1, paddingTop: '80px', paddingBottom: '80px' }}>
+    <div id="about" className="container hero-grid" style={{ position: 'relative', zIndex: 2, paddingTop: '80px', paddingBottom: '80px' }}>
       <section className="hero text-left" style={{ padding: 0 }}>
         <h1 className="hero-title" style={{ margin: '0 0 24px 0', textAlign: 'left', maxWidth: 'none' }}>
           <FlipText>Your Serene Space Starts Here</FlipText>
@@ -345,17 +352,10 @@ const ExtensionPromo = ({ onOpenModal }) => (
 
 
 const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
-  const containerRef = useRef(null);
-  const [carouselWidth, setCarouselWidth] = useState(0);
-  
-  useEffect(() => {
-    if (containerRef.current) {
-      setCarouselWidth(containerRef.current.scrollWidth - containerRef.current.offsetWidth);
-    }
-  }, [wallpapers]);
+  if (!wallpapers.length) return null;
 
-  const featured = wallpapers.slice(0, 6);
-  if (!featured.length) return null;
+
+  const infiniteWallpapers = [...wallpapers, ...wallpapers];
 
   return (
     <section className="showcase-section-drag">
@@ -384,21 +384,16 @@ const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
           transition={{ delay: 0.2 }}
           className="showcase-intro-desc"
         >
-          Swipe or drag to explore our hand-picked selection of minimalist artworks, perfectly framed for your digital space.
+          Discover our hand-picked selection of minimalist artworks, perfectly framed for your digital space. Pause by hovering.
         </motion.p>
       </div>
 
-      <motion.div ref={containerRef} className="showcase-drag-container">
-        <motion.div 
-          drag="x"
-          dragConstraints={{ right: 0, left: -carouselWidth }}
-          whileTap={{ cursor: "grabbing" }}
-          className="showcase-drag-track"
-        >
-          {featured.map((wp) => {
+      <div className="showcase-marquee-container">
+        <div className="showcase-marquee-track">
+          {infiniteWallpapers.map((wp, index) => {
             return (
               <motion.div
-                key={wp.path}
+                key={`${wp.path}-${index}`}
                 className="showcase-card"
                 onClick={() => onPreview(wp)}
                 whileHover={{ scale: 0.98 }}
@@ -421,8 +416,8 @@ const HorizontalShowcase = ({ wallpapers = [], onPreview }) => {
               </motion.div>
             );
           })}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </section>
   );
 };
