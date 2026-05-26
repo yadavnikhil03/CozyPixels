@@ -17,8 +17,6 @@
     <meta name="language" content="English" />
     <meta name="revisit-after" content="7 days" />
     <meta name="rating" content="general" />
-
-    <!-- Open Graph / Facebook / Discord / LinkedIn -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="CozyPixels" />
     <meta property="og:url" content="https://cozypixels.vercel.app/" />
@@ -39,8 +37,6 @@
     <meta name="twitter:description" content="900+ free minimalist wallpapers. Catppuccin, Nord & One Dark themes. Pixel art, anime, space & abstract. Download for free." />
     <meta name="twitter:image" content="https://cozypixels.vercel.app/og-image.png" />
     <meta name="twitter:image:alt" content="CozyPixels wallpaper collection preview" />
-
-    <!-- Structured Data / Schema.org -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -80,8 +76,6 @@
       }
     }
     </script>
-
-    <!-- Performance & Browser hints -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="dns-prefetch" href="https://github.com" />
@@ -93,6 +87,26 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Static content for crawlers that don't execute JavaScript -->
+    <noscript>
+      <div style="font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 40px 20px;">
+        <h1>CozyPixels — Free Minimalist 4K Wallpapers</h1>
+        <p>Browse 900+ free minimalist and aesthetic 4K wallpapers. Curated collections including Catppuccin, Nord, and One Dark themes. Download pixel art, abstract, anime, space and nature wallpapers instantly.</p>
+        <h2>Wallpaper Collections</h2>
+        <ul>
+          <li><strong>Catppuccin Wallpapers</strong> — Soft pastel aesthetic wallpapers in Catppuccin Mocha, Latte, Frappe and Macchiato palettes.</li>
+          <li><strong>Nord Wallpapers</strong> — Cool, arctic-inspired wallpapers using the Nord color palette. Pixel art, abstract, nature and anime themes.</li>
+          <li><strong>One Dark Wallpapers</strong> — Deep, dark wallpapers inspired by the Atom One Dark color scheme.</li>
+        </ul>
+        <h2>Categories</h2>
+        <p>Abstract &amp; Artistic, Pixel Art, Anime &amp; Gaming, Nature &amp; Scenery, Space &amp; Galaxy, Minimalist, Dark Mode, Architecture &amp; City.</p>
+        <h2>Download Free Wallpapers</h2>
+        <p>All wallpapers are free to download in high resolution. Perfect for desktop PC, Mac, dual monitor setups, and mobile phones. Curated by <a href="https://github.com/yadavnikhil03">@yadavnikhil03</a> on GitHub.</p>
+        <p>Enable JavaScript to browse the full wallpaper gallery.</p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

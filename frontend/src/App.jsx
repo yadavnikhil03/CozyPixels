@@ -508,6 +508,7 @@ const WallpaperCard = React.memo(({ wallpaper, onPreview, onShowToast }) => {
         <img
           src={imageUrl}
           alt={displayName}
+          loading="lazy"
           decoding="async"
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
