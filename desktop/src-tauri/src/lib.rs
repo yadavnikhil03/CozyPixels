@@ -400,6 +400,10 @@ async fn fetch_web_images(url: String) -> Result<Vec<String>, String> {
         !lower.contains("tracking") &&
         !lower.contains("spacer") &&
         !lower.contains("placeholder") &&
+        !lower.contains("google-play") &&
+        !lower.contains("app-store") &&
+        !lower.contains("play-store") &&
+        !lower.contains("apple-store") &&
         !lower.ends_with(".svg") &&
         !lower.ends_with(".gif")
     });

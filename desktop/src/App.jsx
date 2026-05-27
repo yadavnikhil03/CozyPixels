@@ -463,7 +463,9 @@ export default function App() {
     async function fetchWeb() {
        setIsFetchingWeb(true);
        let webArr = [];
-       for (let url of webUrls) {
+       const uniqueUrls = [...new Set(webUrls)];
+       
+       for (let url of uniqueUrls) {
            try {
               let urls = await invoke('fetch_web_images', { url });
               if (urls.length === 0) {
