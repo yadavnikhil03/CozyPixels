@@ -11,20 +11,15 @@ const REPO_ROOT = path.join(__dirname, '..');
 
 const WALLPAPER_DIRS = ['Catppuccin', 'Nord', 'One Dark'];
 
-// Priority Route: Extension Download
 app.get('/extension.zip', (req, res) => {
-  console.log('Download request received for /extension.zip');
   const filePath = path.join(__dirname, 'extension.zip');
   if (fs.existsSync(filePath)) {
-    console.log('Serving extension from backend folder');
     return res.download(filePath);
   }
   const rootPath = path.join(REPO_ROOT, 'extension.zip');
   if (fs.existsSync(rootPath)) {
-    console.log('Serving extension from project root');
     return res.download(rootPath);
   }
-  console.error('Extension bundle not found at either path');
   res.status(404).send('Extension bundle not found. Please contact the developer.');
 });
 
@@ -87,6 +82,15 @@ app.get('/wallpapers', (req, res) => {
   res.json(allWallpapers);
 });
 
+app.get('/api/local-image', (req, res) => {
+  const localPath = req.query.path;
+  if (localPath && fs.existsSync(localPath)) {
+    res.sendFile(path.resolve(localPath));
+  } else {
+    res.status(404).send('Not found');
+  }
+});
+
 app.get('/download', (req, res) => {
   const filePathParam = req.query.path;
   if (!filePathParam) {
@@ -94,14 +98,19 @@ app.get('/download', (req, res) => {
   }
 
   const decodedPath = decodeURIComponent(filePathParam);
-  const isAllowed = WALLPAPER_DIRS.some(dir => decodedPath.startsWith(`${dir}/`));
+  // Ensure the resolved path is absolute and within REPO_ROOT
+  const absolutePath = path.resolve(REPO_ROOT, decodedPath);
   
-  if (!isAllowed) {
+  if (!absolutePath.startsWith(path.resolve(REPO_ROOT))) {
     return res.status(403).send('Forbidden');
   }
 
-  const absolutePath = path.join(REPO_ROOT, decodedPath);
+  const isAllowedDir = WALLPAPER_DIRS.some(dir => absolutePath.startsWith(path.resolve(REPO_ROOT, dir)));
   
+  if (!isAllowedDir) {
+    return res.status(403).send('Forbidden');
+  }
+
   if (fs.existsSync(absolutePath)) {
     res.download(absolutePath);
   } else {
@@ -124,6 +133,11 @@ app.get('/api/extension.zip', (req, res) => {
   res.redirect('/extension.zip');
 });
 
+// Global Error Handler
+app.use((err, req, res, next) => {
+  res.status(500).send('Internal Server Error');
+});
+
 app.listen(PORT, () => {
-  console.log(`Backend server is running on http://localhost:${PORT}`);
+  // Server started
 });

@@ -1,0 +1,46 @@
+name: Release Desktop App
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/release.yml'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: desktop
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build and Release Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: desktop
+          tagName: app-v__VERSION__
+          releaseName: 'CozyPixels Desktop v__VERSION__'
+          releaseBody: 'See the assets below to download and install this version of CozyPixels.'
+          releaseDraft: true
+          prerelease: false
