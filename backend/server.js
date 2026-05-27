@@ -17,12 +17,11 @@ app.get('/wallpapers', (req, res) => {
   res.json(allWallpapers);
 });
 
-// Legacy support
+
 app.get('/api/wallpapers', (req, res) => {
-  res.redirect('/wallpapers');
+  res.json(allWallpapers);
 });
 
-// Global Error Handler
 app.use((err, req, res, next) => {
   res.status(500).send('Internal Server Error');
 });

@@ -2,9 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, useDeferredValue } fro
 import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { enable, disable } from '@tauri-apps/plugin-autostart';
-import { check } from '@tauri-apps/plugin-updater';
 import { open, ask } from '@tauri-apps/plugin-dialog';
-import { relaunch } from '@tauri-apps/plugin-process';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   LuSearch, LuDownload, LuImage, LuLayoutGrid,
@@ -280,48 +278,6 @@ export default function App() {
   }, [localFolders, webUrls]);
 
 
-  useEffect(() => {
-    async function performUpdateCheck() {
-      try {
-        const update = await check();
-        if (update) {
-          const yes = await ask(`Version ${update.version} is available!\n\nDo you want to download and install it now?`, {
-            title: 'Update Available',
-            kind: 'info',
-          });
-          if (yes) {
-            addToast('Downloading update...', 'rotate');
-            await update.downloadAndInstall();
-            await relaunch();
-          }
-        }
-      } catch (err) {
-        console.error('Update check failed:', err);
-      }
-    }
-    performUpdateCheck();
-  }, [addToast]);
-
-  const handleManualUpdateCheck = useCallback(async () => {
-    try {
-      const update = await check();
-      if (update) {
-        const yes = await ask(`Version ${update.version} is available!\n\nDo you want to download and install it now?`, {
-          title: 'Update Available',
-          kind: 'info',
-        });
-        if (yes) {
-          addToast('Downloading update...', 'rotate');
-          await update.downloadAndInstall();
-          await relaunch();
-        }
-      } else {
-        await ask('You are on the latest version!', { title: 'Up to date', kind: 'info' });
-      }
-    } catch (err) {
-      addToast(`Update check failed: ${err}`, 'error');
-    }
-  }, [addToast]);
 
 
   useEffect(() => {
@@ -582,11 +538,6 @@ export default function App() {
               )}
             </AnimatePresence>
           </div>
-
-          <button className="nav__item" onClick={handleManualUpdateCheck} style={{ marginTop: '4px' }}>
-            <LuDownload size={15} />
-            <span>Check for updates</span>
-          </button>
         </div>
       </aside>
 
