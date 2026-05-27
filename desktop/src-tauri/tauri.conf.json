@@ -30,6 +30,12 @@
     }
   },
   "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkyOTdEMDYzMUYxNzZFMTQKUldRVWJoY2ZZOUNYa2w2SEJDWkJuSmtUVDZrNUdmeS9BenpYNVozZGVYblJaZlkrNTRpVnp4RHAK"
+    }
   },
   "bundle": {
     "active": true,
