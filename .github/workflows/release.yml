@@ -45,8 +45,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
         with:
           projectPath: desktop
+          includeUpdaterJson: true
           tagName: app-v__VERSION__
           releaseName: 'CozyPixels Desktop v__VERSION__'
           releaseBody: 'See the assets below to download and install this version of CozyPixels.'
