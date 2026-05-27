@@ -518,6 +518,24 @@ use tauri::{
     tray::TrayIconBuilder,
 };
 
+#[tauri::command]
+async fn fetch_image_bytes(url: String) -> Result<Vec<u8>, String> {
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        .build()
+        .map_err(|e| e.to_string())?;
+        
+    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
+    
+    if !resp.status().is_success() {
+        return Err(format!("HTTP Error: {}", resp.status()));
+    }
+    
+    let bytes = resp.bytes().await.map_err(|e| e.to_string())?;
+    Ok(bytes.to_vec())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -606,6 +624,7 @@ pub fn run() {
             update_rotate_interval,
             scan_local_directory,
             fetch_web_images,
+            fetch_image_bytes,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

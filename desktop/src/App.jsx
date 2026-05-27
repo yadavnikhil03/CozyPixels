@@ -166,16 +166,54 @@ const Toast = ({ message, type, onClose }) => {
 const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, setting }) => {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
-  const imageUrl = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
+  const [imgSrc, setImgSrc] = useState(null);
+  const cardRef = useRef(null);
+
+  const baseImageUrl = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
     ? wallpaper.path 
     : `${STATIC_URL}${wallpaper.path}`;
+
   const displayName = wallpaper.name
     .replace(/\.[^/.]+$/, '')
     .replace(/[-_]/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase());
 
+  useEffect(() => {
+    let isMounted = true;
+    
+    if (baseImageUrl.startsWith('http')) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          observer.disconnect();
+          
+          invoke('fetch_image_bytes', { url: baseImageUrl })
+            .then(bytes => {
+              if (!isMounted) return;
+              const blob = new Blob([new Uint8Array(bytes)]);
+              setImgSrc(URL.createObjectURL(blob));
+            })
+            .catch(err => {
+              if (!isMounted) return;
+              console.error("Failed to proxy image:", err);
+              setImgSrc(baseImageUrl);
+            });
+        }
+      }, { rootMargin: '300px' });
+      
+      if (cardRef.current) observer.observe(cardRef.current);
+      
+      return () => {
+        isMounted = false;
+        observer.disconnect();
+      };
+    } else {
+      setImgSrc(baseImageUrl);
+    }
+  }, [baseImageUrl]);
+
   return (
     <div
+      ref={cardRef}
       className="card fade-in"
       onClick={() => loaded && onPreview(wallpaper)}
       onDoubleClick={() => loaded && onSetWallpaper(wallpaper)}
@@ -184,13 +222,12 @@ const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, settin
       {error ? (
         <div className="card__error"><LuImage size={22} /><span>Failed to load</span></div>
       ) : (
-        <img
-          src={imageUrl}
+        imgSrc && <img
+          src={imgSrc}
           alt={displayName}
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
           className="card__img"
-          referrerPolicy="no-referrer"
         />
       )}
       {loaded && (
@@ -225,6 +262,8 @@ const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, settin
 });
 
 const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, setting, settingLock, onNext, onPrev, hasNext, hasPrev }) => {
+  const [imgSrc, setImgSrc] = useState(null);
+
   useEffect(() => {
     const fn = e => { 
       if (e.key === 'Escape') onClose(); 
@@ -234,6 +273,29 @@ const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, setting
     document.addEventListener('keydown', fn);
     return () => document.removeEventListener('keydown', fn);
   }, [onClose, onNext, onPrev, hasNext, hasPrev]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!wallpaper) return;
+    const baseImageUrl = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') ? wallpaper.path : `${STATIC_URL}${wallpaper.path}`;
+    
+    if (wallpaper.path.startsWith('http')) {
+      invoke('fetch_image_bytes', { url: wallpaper.path })
+        .then(bytes => {
+          if (!isMounted) return;
+          const blob = new Blob([new Uint8Array(bytes)]);
+          setImgSrc(URL.createObjectURL(blob));
+        })
+        .catch(err => {
+          if (!isMounted) return;
+          setImgSrc(baseImageUrl);
+        });
+    } else {
+      setImgSrc(baseImageUrl);
+    }
+    
+    return () => { isMounted = false; };
+  }, [wallpaper]);
 
   if (!wallpaper) return null;
   const displayName = wallpaper.name
@@ -254,7 +316,7 @@ const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, setting
             <LuChevronLeft size={24} />
           </button>
         )}
-        <img src={wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') ? wallpaper.path : `${STATIC_URL}${wallpaper.path}`} alt={displayName} className="lightbox__img" referrerPolicy="no-referrer" />
+        {imgSrc && <img src={imgSrc} alt={displayName} className="lightbox__img" />}
         {hasNext && (
           <button className="lightbox__nav lightbox__nav--next" onClick={(e) => { e.stopPropagation(); onNext(); }}>
             <LuChevronRight size={24} />
