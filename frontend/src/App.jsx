@@ -346,8 +346,8 @@ const ExtensionPromo = ({ onOpenModal }) => {
           <motion.a 
             className="apple-promo-btn" 
             href="https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.1_x64-setup.exe"
-            style={{ backgroundColor: 'transparent', border: '1px solid var(--text-color)', color: 'var(--text-color)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
-            whileHover={{ scale: 1.05, backgroundColor: 'var(--text-color)', color: 'var(--bg-color)' }}
+            style={{ backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.5)', color: '#ffffff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: '#ffffff' }}
             whileTap={{ scale: 0.95 }}
           >
             Download Desktop App
