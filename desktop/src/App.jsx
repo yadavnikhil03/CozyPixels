@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useDeferredValue } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { enable, disable } from '@tauri-apps/plugin-autostart';
 import { check } from '@tauri-apps/plugin-updater';
@@ -15,8 +15,8 @@ import {
 } from 'react-icons/lu';
 import './App.css';
 
-const API_URL = 'http://localhost:3001/api';
-const STATIC_URL = 'http://localhost:3001';
+const API_URL = 'https://cozy-pixels.vercel.app/api';
+const STATIC_URL = 'https://cozy-pixels.vercel.app';
 
 const Toast = ({ message, type, onClose }) => {
   useEffect(() => {
@@ -251,7 +251,7 @@ export default function App() {
               let paths = await invoke('scan_local_directory', { path: folder });
               arr.push(...paths.map(p => {
                  const pClean = p.replace(/\\/g, '/');
-                 const localUrl = `http://localhost:3001/api/local-image?path=${encodeURIComponent(pClean)}`;
+                 const localUrl = convertFileSrc(pClean);
                  return {
                    name: pClean.split('/').pop(),
                    path: localUrl,

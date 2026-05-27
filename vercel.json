@@ -10,5 +10,10 @@
       "routePrefix": "/api",
       "entrypoint": "server.js"
     }
+  },
+  "functions": {
+    "backend/server.js": {
+      "includeFiles": "{Catppuccin,Nord,One Dark}/**"
+    }
   }
 }

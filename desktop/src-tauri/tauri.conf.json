@@ -22,7 +22,11 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3001; img-src 'self' cozy: asset: http://localhost:3001 https://* http://* data:;"
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["**"]
+      },
+      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3001 https://cozy-pixels.vercel.app; img-src 'self' cozy: asset: http://localhost:3001 https://* http://* data:;"
     }
   },
   "plugins": {
