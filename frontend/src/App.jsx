@@ -326,23 +326,33 @@ const ExtensionPromo = ({ onOpenModal }) => {
       
       <div className="apple-promo-header">
         <motion.div className="apple-promo-eyebrow" variants={promoItemVariants}>
-          Browser Extension
+          Apps & Extensions
         </motion.div>
         <motion.h2 className="apple-promo-title" variants={promoItemVariants}>
-          Your browser.<br/>Reimagined.
+          Your screen.<br/>Reimagined.
         </motion.h2>
         <motion.p className="apple-promo-subtitle" variants={promoItemVariants}>
-          Transform your new tab into a serene digital sanctuary with daily curated wallpapers and a calm layout.
+          Transform your desktop and browser into a serene digital sanctuary with our standalone app and browser extension.
         </motion.p>
-        <motion.button 
-          className="apple-promo-btn" 
-          onClick={onOpenModal}
-          variants={promoItemVariants}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          Install Extension
-        </motion.button>
+        <motion.div className="apple-promo-actions" variants={promoItemVariants} style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '16px' }}>
+          <motion.button 
+            className="apple-promo-btn" 
+            onClick={onOpenModal}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Install Extension
+          </motion.button>
+          <motion.a 
+            className="apple-promo-btn" 
+            href="https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.1_x64-setup.exe"
+            style={{ backgroundColor: 'transparent', border: '1px solid var(--text-color)', color: 'var(--text-color)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+            whileHover={{ scale: 1.05, backgroundColor: 'var(--text-color)', color: 'var(--bg-color)' }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Download Desktop App
+          </motion.a>
+        </motion.div>
       </div>
 
       <motion.div 

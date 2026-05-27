@@ -12,7 +12,7 @@
 <hr />
 
 ## About The Project
-CozyPixels started as a collection of beautiful wallpapers and turned into a dedicated website and browser extension. The goal is to provide a clean, distraction-free environment for your workspace. 
+CozyPixels started as a collection of beautiful wallpapers and turned into a dedicated website, a browser extension, and a native desktop app. The goal is to provide a clean, distraction-free environment for your workspace. 
 
 - **Focus Mode**: Open any wallpaper in full-screen to remove distractions.
 - **Productivity**: Includes a Pomodoro timer built directly into the site.
@@ -25,7 +25,18 @@ CozyPixels started as a collection of beautiful wallpapers and turned into a ded
 <img width="100%" alt="Screenshot 3" src="https://github.com/user-attachments/assets/a231d719-b834-42e9-9539-29dfb5156a90" />
 <img width="100%" alt="Screenshot 4" src="https://github.com/user-attachments/assets/7216f9d3-60ff-4ac0-9b33-389613d365c4" />
 
-## Browser Extension (Cozy Engine)
+## Desktop App & Browser Extension
+We built native desktop and browser apps to integrate these wallpapers directly into your daily workflow.
+
+### Desktop App (Windows)
+The standalone desktop app gives you a beautiful native experience to manage and set wallpapers on your computer.
+- Add local folders or fetch ultra-high resolution images directly from the web.
+- Automatically changes your desktop wallpaper on a customizable timer.
+- Runs silently in the system tray.
+
+**[Download the Windows App](https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.1_x64-setup.exe)**
+
+### Browser Extension (Cozy Engine)
 We also built a Chrome extension that replaces your new tab page with a rotating cozy wallpaper. 
 - Automatically changes wallpapers based on a timer you set.
 - Caches images offline so they load instantly without any network delay.
