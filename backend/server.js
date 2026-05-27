@@ -1,136 +1,25 @@
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-const REPO_ROOT = path.join(__dirname, '..');
 
-const WALLPAPER_DIRS = ['Catppuccin', 'Nord', 'One Dark'];
+let allWallpapers = [];
+try {
+  allWallpapers = require('./wallpapers.json');
+} catch (e) {
+  console.log('wallpapers.json not found, make sure to run generate.js');
+}
 
-app.get('/extension.zip', (req, res) => {
-  const filePath = path.join(__dirname, 'extension.zip');
-  if (fs.existsSync(filePath)) {
-    return res.download(filePath);
-  }
-  const rootPath = path.join(REPO_ROOT, 'extension.zip');
-  if (fs.existsSync(rootPath)) {
-    return res.download(rootPath);
-  }
-  res.status(404).send('Extension bundle not found. Please contact the developer.');
-});
-
-const findImages = (dir, category) => {
-  let results = [];
-  try {
-    const list = fs.readdirSync(dir);
-    list.forEach(file => {
-      const filePath = path.join(dir, file);
-      const stat = fs.statSync(filePath);
-      if (stat && stat.isDirectory()) {
-        results = results.concat(findImages(filePath, category));
-      } else {
-        const ext = path.extname(file).toLowerCase();
-        if (['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(ext)) {
-          const relativePath = path.relative(REPO_ROOT, filePath).replace(/\\/g, '/');
-          const encodedPath = relativePath.split('/').map(segment => encodeURIComponent(segment)).join('/');
-          results.push({
-            name: file,
-            path: `/${encodedPath}`, 
-            category: category,
-            downloadPath: `/api/download?path=${encodeURIComponent(relativePath)}`
-          });
-        }
-      }
-    });
-  } catch (error) {
-    console.error(`Error reading directory ${dir}:`, error);
-  }
-  return results;
-};
-
-// Mount static routes for images
-WALLPAPER_DIRS.forEach(dir => {
-  const absolutePath = path.join(REPO_ROOT, dir);
-  if (fs.existsSync(absolutePath)) {
-    app.use(`/${dir}`, express.static(absolutePath));
-    app.use(`/${encodeURIComponent(dir)}`, express.static(absolutePath));
-  }
-});
-
-// Deployment-friendly routes (prefix /api is handled by vercel.json)
 app.get('/wallpapers', (req, res) => {
-  let allWallpapers = [];
-  let seenNames = new Set();
-  
-  WALLPAPER_DIRS.forEach(category => {
-    const dirPath = path.join(REPO_ROOT, category);
-    if (fs.existsSync(dirPath)) {
-      const images = findImages(dirPath, category);
-      images.forEach(img => {
-        if (!seenNames.has(img.name)) {
-          seenNames.add(img.name);
-          allWallpapers.push(img);
-        }
-      });
-    }
-  });
-
   res.json(allWallpapers);
 });
 
-app.get('/api/local-image', (req, res) => {
-  const localPath = req.query.path;
-  if (localPath && fs.existsSync(localPath)) {
-    res.sendFile(path.resolve(localPath));
-  } else {
-    res.status(404).send('Not found');
-  }
-});
-
-app.get('/download', (req, res) => {
-  const filePathParam = req.query.path;
-  if (!filePathParam) {
-    return res.status(400).send('Path is required');
-  }
-
-  const decodedPath = decodeURIComponent(filePathParam);
-  // Ensure the resolved path is absolute and within REPO_ROOT
-  const absolutePath = path.resolve(REPO_ROOT, decodedPath);
-  
-  if (!absolutePath.startsWith(path.resolve(REPO_ROOT))) {
-    return res.status(403).send('Forbidden');
-  }
-
-  const isAllowedDir = WALLPAPER_DIRS.some(dir => absolutePath.startsWith(path.resolve(REPO_ROOT, dir)));
-  
-  if (!isAllowedDir) {
-    return res.status(403).send('Forbidden');
-  }
-
-  if (fs.existsSync(absolutePath)) {
-    res.download(absolutePath);
-  } else {
-    res.status(404).send('File not found');
-  }
-});
-
-// Legacy support for local development if prefix is included
+// Legacy support
 app.get('/api/wallpapers', (req, res) => {
   res.redirect('/wallpapers');
-});
-app.get('/api/download', (req, res) => {
-  if (req.query.path) {
-    res.redirect(`/download?path=${encodeURIComponent(req.query.path)}`);
-  } else {
-    res.status(400).send('Path is required');
-  }
-});
-app.get('/api/extension.zip', (req, res) => {
-  res.redirect('/extension.zip');
 });
 
 // Global Error Handler
@@ -139,5 +28,5 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, () => {
-  // Server started
+  console.log(`Server started on port ${PORT}`);
 });
