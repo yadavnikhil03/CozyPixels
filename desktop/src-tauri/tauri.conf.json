@@ -26,7 +26,7 @@
         "enable": true,
         "scope": ["**"]
       },
-      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3001 https://cozy-pixels.vercel.app; img-src 'self' cozy: asset: http://localhost:3001 https://* http://* data:;"
+      "csp": "default-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:3001 https://cozy-pixels.vercel.app; img-src 'self' cozy: asset: http://localhost:3001 https://* http://* data: blob:; connect-src 'self' http://localhost:3001 https://* http://*;"
     }
   },
   "plugins": {

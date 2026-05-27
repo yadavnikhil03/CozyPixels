@@ -311,19 +311,63 @@ fn scan_local_directory(path: String) -> Result<Vec<String>, String> {
 
 #[tauri::command]
 async fn fetch_web_images(url: String) -> Result<Vec<String>, String> {
-    let response = reqwest::get(&url).await.map_err(|e| e.to_string())?;
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
     let html = response.text().await.map_err(|e| e.to_string())?;
     
     let base_url = url::Url::parse(&url).map_err(|e| e.to_string())?;
     let mut images = Vec::new();
     
-    // 1. Grab from standard img attributes, data-src, meta content, or hrefs
-    let attr_re = regex::Regex::new(r#"(?i)(?:src|data-src|data-original|data-lazy-src|data-highres|content|href)\s*=\s*["']([^"']+)["']"#).unwrap();
+    let srcset_re = regex::Regex::new(r#"(?i)srcset\s*=\s*["']([^"']+)["']"#).unwrap();
+    for cap in srcset_re.captures_iter(&html) {
+        if let Some(srcset) = cap.get(1) {
+            let mut best_url = "";
+            let mut best_w: u32 = 0;
+            for entry in srcset.as_str().split(',') {
+                let parts: Vec<&str> = entry.trim().split_whitespace().collect();
+                if parts.len() >= 2 {
+                    let w_str = parts[1].trim_end_matches('w').trim_end_matches('x');
+                    if let Ok(w) = w_str.parse::<u32>() {
+                        if w > best_w {
+                            best_w = w;
+                            best_url = parts[0];
+                        }
+                    }
+                } else if parts.len() == 1 && !parts[0].is_empty() {
+                    if best_w == 0 {
+                        best_url = parts[0];
+                    }
+                }
+            }
+            if !best_url.is_empty() {
+                if let Ok(parsed) = base_url.join(best_url) {
+                    images.push(parsed.to_string());
+                }
+            }
+        }
+    }
+    let ext_re = regex::Regex::new(r#"(?i)(?:https?://|/|\.\./)[^"'\s<>\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"'\s<>\\]*)?"#).unwrap();
+    for cap in ext_re.captures_iter(&html) {
+        if let Some(src) = cap.get(0) {
+            let s = src.as_str();
+
+            if !s.to_lowercase().ends_with(".gif") && !s.to_lowercase().ends_with(".svg") {
+                if let Ok(parsed) = base_url.join(s) {
+                    images.push(parsed.to_string());
+                }
+            }
+        }
+    }
+    let attr_re = regex::Regex::new(r#"(?i)(?:src|data-src|data-original|data-lazy-src|data-highres|data-full|data-large|content|href)\s*=\s*["']([^"']+)["']"#).unwrap();
     for cap in attr_re.captures_iter(&html) {
         if let Some(src) = cap.get(1) {
             let s = src.as_str();
             let lower = s.to_lowercase();
-            // Check if it looks like an image
             if lower.ends_with(".jpg") || lower.ends_with(".jpeg") || lower.ends_with(".png") || lower.ends_with(".webp") || lower.contains("images.") || lower.contains("format=jpg") || lower.contains("format=webp") || lower.contains("media.") || lower.contains("image/") {
                 if let Ok(parsed) = base_url.join(s) {
                     images.push(parsed.to_string());
@@ -331,18 +375,9 @@ async fn fetch_web_images(url: String) -> Result<Vec<String>, String> {
             }
         }
     }
-    
-    // 2. Aggressive fallback: find any string in the HTML that looks like an absolute/root-relative image URL
-    let ext_re = regex::Regex::new(r#"(?i)(?:https?://|/)[^"'\s<>\\]+\.(?:jpg|jpeg|png|webp)"#).unwrap();
-    for cap in ext_re.captures_iter(&html) {
-        if let Some(src) = cap.get(0) {
-            if let Ok(parsed) = base_url.join(src.as_str()) {
-                images.push(parsed.to_string());
-            }
-        }
-    }
 
-    // Filter out obvious low-res assets like favicons or icons
+    images.sort();
+    images.dedup();
     images.retain(|url| {
         let lower = url.to_lowercase();
         !lower.contains("favicon") && 
@@ -350,76 +385,119 @@ async fn fetch_web_images(url: String) -> Result<Vec<String>, String> {
         !lower.contains("icon") &&
         !lower.contains("logo") &&
         !lower.contains("spinner") &&
-        !lower.ends_with(".svg")
+        !lower.contains("sprite") &&
+        !lower.contains("emoji") &&
+        !lower.contains("badge") &&
+        !lower.contains("button") &&
+        !lower.contains("banner") && 
+        !lower.contains("thumbnail") &&
+        !lower.contains("thumb") &&
+        !lower.contains("/s/") &&
+        !lower.contains("_small") &&
+        !lower.contains("_tiny") &&
+        !lower.contains("1x1") &&
+        !lower.contains("pixel") &&
+        !lower.contains("tracking") &&
+        !lower.contains("spacer") &&
+        !lower.contains("placeholder") &&
+        !lower.ends_with(".svg") &&
+        !lower.ends_with(".gif")
     });
-
-    // Automatically upscale known CDN thumbnails to high-resolution wallpapers
     for img in images.iter_mut() {
         if img.contains("images.unsplash.com") {
-            // Unsplash: force high resolution and maximum quality
-            *img = regex::Regex::new(r"(?i)&w=\d+").unwrap().replace_all(img, "&w=3840").to_string();
-            *img = regex::Regex::new(r"(?i)\?w=\d+").unwrap().replace_all(img, "?w=3840").to_string();
-            *img = regex::Regex::new(r"(?i)&q=\d+").unwrap().replace_all(img, "&q=100").to_string();
-            if !img.contains("w=") {
-                if img.contains("?") {
-                    img.push_str("&w=3840&q=100");
-                } else {
-                    img.push_str("?w=3840&q=100");
-                }
+            *img = regex::Regex::new(r"(?i)[?&]w=\d+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]h=\d+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]q=\d+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]fm=\w+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]auto=\w+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]fit=\w+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]crop=\w+").unwrap().replace_all(img, "").to_string();
+            *img = img.trim_end_matches('?').trim_end_matches('&').to_string();
+            if img.contains("?") {
+                img.push_str("&w=3840&q=100&fm=jpg");
+            } else {
+                img.push_str("?w=3840&q=100&fm=jpg");
             }
+            continue;
         }
         if img.contains("preview.redd.it") {
-            // Reddit: swap preview domain for full resolution domain
             *img = img.replace("preview.redd.it", "i.redd.it");
+            if let Some(pos) = img.find('?') {
+                *img = img[..pos].to_string();
+            }
+            continue;
         }
         if img.contains("i.pinimg.com") {
-            // Pinterest: upgrade thumbnail sizes (236x, 474x, 736x) to original resolution
             *img = regex::Regex::new(r"(?i)i\.pinimg\.com/\d+x/").unwrap().replace_all(img, "i.pinimg.com/originals/").to_string();
+            *img = regex::Regex::new(r"(?i)i\.pinimg\.com/\d+x\d+/").unwrap().replace_all(img, "i.pinimg.com/originals/").to_string();
+            continue;
+        }
+        if img.contains("images.pexels.com") {
+            *img = regex::Regex::new(r"(?i)[?&]auto=compress[^&]*").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]cs=\w+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]w=\d+").unwrap().replace_all(img, "").to_string();
+            *img = regex::Regex::new(r"(?i)[?&]h=\d+").unwrap().replace_all(img, "").to_string();
+            *img = img.trim_end_matches('?').trim_end_matches('&').to_string();
+            continue;
+        }
+        if img.contains("staticflickr.com") || img.contains("live.staticflickr.com") {
+            *img = regex::Regex::new(r"(?i)_[smtqnzc]\.").unwrap().replace_all(img, "_b.").to_string();
+            continue;
+        }
+        if img.contains("i.imgur.com") {
+            *img = regex::Regex::new(r"(?i)([a-zA-Z0-9]+)[sbtmlh]\.(jpg|jpeg|png|webp)").unwrap().replace_all(img, "$1.$2").to_string();
+            continue;
+        }
+        if img.contains("pixabay.com") {
+            *img = regex::Regex::new(r"(?i)_\d+\.").unwrap().replace_all(img, "_1280.").to_string();
+            continue;
         }
         if img.contains("tumblr.com") {
-            // Tumblr: upgrade _250, _400, _500, _540 to _1280
             *img = regex::Regex::new(r"(?i)_(\d+)\.(jpg|png|webp)").unwrap().replace_all(img, "_1280.$2").to_string();
+            continue;
         }
         if img.contains("th.wallhaven.cc/small") {
-            // Wallhaven: transform thumbnail URL to full wallpaper URL
             let wh_re = regex::Regex::new(r"(?i)th\.wallhaven\.cc/small/([a-z0-9]+)/([a-z0-9]+)\.(jpg|png)").unwrap();
             *img = wh_re.replace_all(img, "w.wallhaven.cc/full/$1/wallhaven-$2.$3").to_string();
+            continue;
         }
+        *img = regex::Regex::new(r"(?i)[-_]\d+x\d+\.(jpg|jpeg|png|webp)").unwrap().replace_all(img, ".$1").to_string();
+        *img = regex::Regex::new(r"(?i)[?&](?:w|width|h|height|size|resize)=\d+").unwrap().replace_all(img, "").to_string();
+        *img = regex::Regex::new(r"[?&]$").unwrap().replace_all(img, "").to_string();
     }
 
     images.sort();
     images.dedup();
     
-    // Concurrently filter images by performing a HEAD request to check file size.
-    // This rejects small icons/banners and ensures we only get high-quality wallpapers.
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(4))
+    let filter_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
         .build()
         .unwrap_or_default();
 
     let mut tasks = Vec::new();
     for img in images.into_iter() {
-        let client_clone = client.clone();
+        let c = filter_client.clone();
         tasks.push(tokio::spawn(async move {
-            // Some upscaled CDN URLs might reject HEAD requests or not include Content-Length, 
-            // so we automatically trust ones we manually upscaled.
             if img.contains("images.unsplash.com") || img.contains("i.pinimg.com/originals") || 
-               img.contains("w.wallhaven.cc/full") || img.contains("i.redd.it") {
+               img.contains("w.wallhaven.cc/full") || img.contains("i.redd.it") ||
+               img.contains("_1280.") || img.contains("_b.") || img.contains("/originals/") {
                 return Some(img);
             }
             
-            if let Ok(resp) = client_clone.head(&img).send().await {
+            if let Ok(resp) = c.head(&img).send().await {
                 if resp.status().is_success() {
                     if let Some(len) = resp.content_length() {
-                        // 15KB minimum size. Drops 1-10KB tiny UI icons and tracking pixels,
-                        // but allows highly compressed WebP wallpapers and medium thumbnails.
-                        if len < 15_000 {
+                        if len > 0 && len < 100_000 {
                             return None;
                         }
                     }
+                    return Some(img);
+                } else if resp.status().as_u16() == 403 || resp.status().as_u16() == 405 {
+                    return Some(img);
                 }
+                return None;
             }
-            // If HEAD fails (e.g. 403 or 405) or there's no Content-Length, we keep it to be safe.
             Some(img)
         }));
     }

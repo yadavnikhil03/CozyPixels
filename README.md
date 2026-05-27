@@ -34,7 +34,7 @@ The standalone desktop app gives you a beautiful native experience to manage and
 - Automatically changes your desktop wallpaper on a customizable timer.
 - Runs silently in the system tray.
 
-**[Download the Windows App](https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.1_x64-setup.exe)**
+**[Download the Windows App](https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.5_x64-setup.exe)**
 
 ### Browser Extension (Cozy Engine)
 We also built a Chrome extension that replaces your new tab page with a rotating cozy wallpaper. 

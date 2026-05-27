@@ -3,7 +3,7 @@ import { invoke, convertFileSrc } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { enable, disable } from '@tauri-apps/plugin-autostart';
 import { check } from '@tauri-apps/plugin-updater';
-import { open, ask } from '@tauri-apps/plugin-dialog';
+import { open } from '@tauri-apps/plugin-dialog';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -14,6 +14,129 @@ import {
   LuFolderPlus, LuGlobe
 } from 'react-icons/lu';
 import './App.css';
+
+const UpdateModal = ({ show, onClose, state, version, progress, errorMsg, onInstall }) => {
+  if (!show) return null;
+  return (
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          className="update-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={state !== 'downloading' ? onClose : undefined}
+        >
+          <motion.div
+            className="update-modal"
+            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 30 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 340 }}
+            onClick={e => e.stopPropagation()}
+          >
+            {state === 'checking' && (
+              <div className="update-content">
+                <div className="update-icon-wrap update-icon--checking">
+                  <svg className="update-spinner" viewBox="0 0 50 50">
+                    <defs>
+                      <linearGradient id="update-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="var(--md-sys-color-primary)" />
+                        <stop offset="100%" stopColor="#5E5CE6" />
+                      </linearGradient>
+                    </defs>
+                    <circle cx="25" cy="25" r="20" stroke="url(#update-grad)" strokeWidth="4" fill="none" strokeLinecap="round" strokeDasharray="90, 150" />
+                  </svg>
+                </div>
+                <h3 className="update-title">Checking for updates</h3>
+                <p className="update-desc">Looking for the latest version...</p>
+              </div>
+            )}
+
+            {state === 'available' && (
+              <div className="update-content">
+                <motion.div 
+                  className="update-icon-wrap update-icon--available"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
+                >
+                  <LuDownload size={28} />
+                </motion.div>
+                <h3 className="update-title">Update Available</h3>
+                <p className="update-desc">Version <strong>{version}</strong> is ready to install</p>
+                <div className="update-actions">
+                  <button className="update-btn update-btn--ghost" onClick={onClose}>Later</button>
+                  <button className="update-btn update-btn--primary" onClick={onInstall}>
+                    <LuDownload size={15} />
+                    Install Now
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {state === 'uptodate' && (
+              <div className="update-content">
+                <motion.div 
+                  className="update-icon-wrap update-icon--success"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
+                >
+                  <LuCheck size={28} />
+                </motion.div>
+                <h3 className="update-title">You're up to date!</h3>
+                <p className="update-desc">CozyPixels v{version} is the latest version</p>
+                <div className="update-actions">
+                  <button className="update-btn update-btn--primary" onClick={onClose}>Awesome!</button>
+                </div>
+              </div>
+            )}
+
+            {state === 'downloading' && (
+              <div className="update-content">
+                <div className="update-icon-wrap update-icon--downloading">
+                  <LuDownload size={28} className="update-bounce" />
+                </div>
+                <h3 className="update-title">Downloading Update</h3>
+                <p className="update-desc">Installing v{version}... Please wait</p>
+                <div className="update-progress-wrap">
+                  <div className="update-progress-track">
+                    <motion.div 
+                      className="update-progress-fill"
+                      initial={{ width: '0%' }}
+                      animate={{ width: progress > 0 ? `${progress}%` : '100%' }}
+                      transition={progress > 0 ? { duration: 0.3 } : { duration: 2, repeat: Infinity, ease: 'linear' }}
+                    />
+                  </div>
+                  {progress > 0 && <span className="update-progress-text">{Math.round(progress)}%</span>}
+                </div>
+              </div>
+            )}
+
+            {state === 'error' && (
+              <div className="update-content">
+                <motion.div 
+                  className="update-icon-wrap update-icon--error"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
+                >
+                  <LuX size={28} />
+                </motion.div>
+                <h3 className="update-title">Update Failed</h3>
+                <p className="update-desc">{errorMsg || 'Could not check for updates'}</p>
+                <div className="update-actions">
+                  <button className="update-btn update-btn--primary" onClick={onClose}>Close</button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
 
 const API_URL = 'https://cozy-pixels.vercel.app/api';
 const STATIC_URL = 'https://cozy-pixels.vercel.app';
@@ -67,6 +190,7 @@ const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, settin
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
           className="card__img"
+          referrerPolicy="no-referrer"
         />
       )}
       {loaded && (
@@ -130,7 +254,7 @@ const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, setting
             <LuChevronLeft size={24} />
           </button>
         )}
-        <img src={wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') ? wallpaper.path : `${STATIC_URL}${wallpaper.path}`} alt={displayName} className="lightbox__img" />
+        <img src={wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') ? wallpaper.path : `${STATIC_URL}${wallpaper.path}`} alt={displayName} className="lightbox__img" referrerPolicy="no-referrer" />
         {hasNext && (
           <button className="lightbox__nav lightbox__nav--next" onClick={(e) => { e.stopPropagation(); onNext(); }}>
             <LuChevronRight size={24} />
@@ -241,10 +365,7 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('cozy_localFolders', JSON.stringify(localFolders));
-    localStorage.setItem('cozy_webUrls', JSON.stringify(webUrls));
-    
-    async function fetchCustom() {
-       setIsFetchingWeb(true);
+    async function scanLocal() {
        let arr = [];
        for (let folder of localFolders) {
            try {
@@ -260,68 +381,111 @@ export default function App() {
                    downloadPath: localUrl
                  };
               }));
-           } catch (e) { console.error(e) }
+           } catch (e) { console.error('Local scan error:', e); }
        }
+       setCustomWallpapers(prev => {
+         const webOnly = prev.filter(w => w.category.startsWith('Web:'));
+         return [...arr, ...webOnly];
+       });
+    }
+    scanLocal();
+  }, [localFolders]);
+
+  useEffect(() => {
+    localStorage.setItem('cozy_webUrls', JSON.stringify(webUrls));
+    if (webUrls.length === 0) {
+      setCustomWallpapers(prev => prev.filter(w => !w.category.startsWith('Web:')));
+      setIsFetchingWeb(false);
+      return;
+    }
+    async function fetchWeb() {
+       setIsFetchingWeb(true);
+       let webArr = [];
        for (let url of webUrls) {
            try {
               let urls = await invoke('fetch_web_images', { url });
-              arr.push(...urls.map(u => ({
+              if (urls.length === 0) {
+                addToast(`No images found on ${new URL(url).hostname}`, 'error');
+              } else {
+                addToast(`Found ${urls.length} images from ${new URL(url).hostname}`, 'success');
+              }
+              webArr.push(...urls.map(u => ({
                  name: u.split('/').pop().split('?')[0] || 'Web Image',
                  path: u,
                  category: `Web: ${new URL(url).hostname}`,
                  downloadPath: u,
               })));
-           } catch (e) { console.error(e) }
+           } catch (e) {
+             console.error('Web fetch error:', e);
+             addToast(`Failed to fetch from ${url}: ${e}`, 'error');
+           }
        }
-       setCustomWallpapers(arr);
+       setCustomWallpapers(prev => {
+         const localOnly = prev.filter(w => w.category.startsWith('Local:'));
+         return [...localOnly, ...webArr];
+       });
        setIsFetchingWeb(false);
     }
-    fetchCustom();
-  }, [localFolders, webUrls]);
+    fetchWeb();
+  }, [webUrls, addToast]);
+  
+  const [updateModal, setUpdateModal] = useState({ show: false, state: 'checking', version: '', progress: 0, error: '' });
+  const pendingUpdateRef = useRef(null);
 
+  const showUpdateModal = useCallback((s) => setUpdateModal(prev => ({ ...prev, show: true, ...s })), []);
+  const closeUpdateModal = useCallback(() => setUpdateModal(prev => ({ ...prev, show: false })), []);
 
-  useEffect(() => {
-    async function performUpdateCheck() {
-      try {
-        const update = await check();
-        if (update) {
-          const yes = await ask(`Version ${update.version} is available!\n\nDo you want to download and install it now?`, {
-            title: 'Update Available',
-            kind: 'info',
-          });
-          if (yes) {
-            addToast('Downloading update...', 'rotate');
-            await update.downloadAndInstall();
-            await relaunch();
-          }
-        }
-      } catch (err) {
-        console.error('Update check failed:', err);
-      }
-    }
-    performUpdateCheck();
-  }, [addToast]);
-
-  const handleManualUpdateCheck = useCallback(async () => {
+  const performUpdate = useCallback(async (manual = false) => {
+    showUpdateModal({ state: 'checking', version: '', progress: 0, error: '' });
     try {
       const update = await check();
       if (update) {
-        const yes = await ask(`Version ${update.version} is available!\n\nDo you want to download and install it now?`, {
-          title: 'Update Available',
-          kind: 'info',
-        });
-        if (yes) {
-          addToast('Downloading update...', 'rotate');
-          await update.downloadAndInstall();
-          await relaunch();
-        }
+        pendingUpdateRef.current = update;
+        showUpdateModal({ state: 'available', version: update.version });
+      } else if (manual) {
+        const currentVersion = '1.0.5';
+        showUpdateModal({ state: 'uptodate', version: currentVersion });
       } else {
-        await ask('You are on the latest version!', { title: 'Up to date', kind: 'info' });
+        closeUpdateModal();
       }
     } catch (err) {
-      addToast(`Update check failed: ${err}`, 'error');
+      if (manual) {
+        showUpdateModal({ state: 'error', error: String(err) });
+      } else {
+        closeUpdateModal();
+        console.error('Update check failed:', err);
+      }
     }
-  }, [addToast]);
+  }, [showUpdateModal, closeUpdateModal]);
+
+  const handleInstallUpdate = useCallback(async () => {
+    const update = pendingUpdateRef.current;
+    if (!update) return;
+    showUpdateModal({ state: 'downloading', version: update.version, progress: 0 });
+    try {
+      let downloaded = 0;
+      let contentLength = 0;
+      await update.downloadAndInstall((event) => {
+        if (event.event === 'Started' && event.data?.contentLength) {
+          contentLength = event.data.contentLength;
+        } else if (event.event === 'Progress' && event.data?.chunkLength) {
+          downloaded += event.data.chunkLength;
+          if (contentLength > 0) {
+            setUpdateModal(prev => ({ ...prev, progress: (downloaded / contentLength) * 100 }));
+          }
+        } else if (event.event === 'Finished') {
+          setUpdateModal(prev => ({ ...prev, progress: 100 }));
+        }
+      });
+      await relaunch();
+    } catch (err) {
+      showUpdateModal({ state: 'error', error: String(err) });
+    }
+  }, [showUpdateModal]);
+
+  useEffect(() => { performUpdate(false); }, []);
+
+  const handleManualUpdateCheck = useCallback(() => performUpdate(true), [performUpdate]);
 
 
   useEffect(() => {
@@ -586,6 +750,7 @@ export default function App() {
           <button className="nav__item" onClick={handleManualUpdateCheck} style={{ marginTop: '4px' }}>
             <LuDownload size={15} />
             <span>Check for updates</span>
+            <span className="nav__badge" style={{ fontSize: '10px', opacity: 0.5 }}>v1.0.5</span>
           </button>
         </div>
       </aside>
@@ -690,6 +855,16 @@ export default function App() {
         )}
       </AnimatePresence>
       
+      <UpdateModal
+        show={updateModal.show}
+        state={updateModal.state}
+        version={updateModal.version}
+        progress={updateModal.progress}
+        errorMsg={updateModal.error}
+        onClose={closeUpdateModal}
+        onInstall={handleInstallUpdate}
+      />
+
       <AnimatePresence>
         {showWebModal && (
           <motion.div
