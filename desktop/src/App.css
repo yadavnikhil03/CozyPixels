@@ -1141,6 +1141,93 @@ body {
   font-family: 'Geist', monospace;
 }
 
+/* ─── Splash Screen ─── */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.splash__bg {
+  position: absolute;
+  inset: 0;
+  background: var(--md-sys-color-surface);
+}
+
+.splash__content {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+/* Logo wrapper — holds SVG ring + icon */
+.splash__logo-wrap {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash__ring {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.splash__ring-path {
+  animation: splash-draw 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes splash-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+.splash__icon {
+  position: relative;
+  color: var(--md-sys-color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.splash__title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--md-sys-color-on-surface);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.splash__bar-track {
+  width: 120px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--md-sys-color-surface-container-highest);
+  overflow: hidden;
+}
+
+.splash__bar-fill {
+  width: 40%;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--md-sys-color-primary);
+  animation: splash-slide 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes splash-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

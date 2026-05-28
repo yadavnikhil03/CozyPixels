@@ -16,6 +16,80 @@ import {
 } from 'react-icons/lu';
 import './App.css';
 
+const SplashScreen = ({ visible }) => {
+  const circleRef = useRef(null);
+  const CIRCUMFERENCE = 2 * Math.PI * 44; // r=44
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          className="splash"
+          initial={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.45, ease: [0.4, 0, 1, 1] }}
+        >
+          <div className="splash__bg" />
+
+          <div className="splash__content">
+            <motion.div
+              className="splash__logo-wrap"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <svg className="splash__ring" viewBox="0 0 96 96" fill="none">
+                <circle
+                  ref={circleRef}
+                  cx="48" cy="48" r="44"
+                  stroke="url(#splash-grad)"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeDasharray={CIRCUMFERENCE}
+                  strokeDashoffset={CIRCUMFERENCE}
+                  className="splash__ring-path"
+                />
+                <defs>
+                  <linearGradient id="splash-grad" x1="0" y1="0" x2="96" y2="96" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="var(--md-sys-color-primary)" />
+                    <stop offset="100%" stopColor="#5E5CE6" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <motion.div
+                className="splash__icon"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <LuSparkles size={30} />
+              </motion.div>
+            </motion.div>
+
+            <motion.h1
+              className="splash__title"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            >
+              CozyPixels
+            </motion.h1>
+
+            <motion.div
+              className="splash__bar-track"
+              initial={{ opacity: 0, scaleX: 0.3 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ delay: 0.6, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="splash__bar-fill" />
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 const UpdateModal = ({ show, onClose, state, version, progress, errorMsg, onInstall }) => {
   const trapRef = useFocusTrap(show);
 
@@ -183,14 +257,19 @@ const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, onDown
   const [imgSrc, setImgSrc] = useState(null);
   const cardRef = useRef(null);
 
-  const baseImageUrl = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
-    ? wallpaper.path 
-    : `${STATIC_URL}${wallpaper.path}`;
+  const baseImageUrl = useMemo(() => 
+    wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
+      ? wallpaper.path 
+      : `${STATIC_URL}${wallpaper.path}`,
+    [wallpaper.path]
+  );
 
-  const displayName = wallpaper.name
+  const displayName = useMemo(() => wallpaper.name
     .replace(/\.[^/.]+$/, '')
     .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, c => c.toUpperCase());
+    .replace(/\b\w/g, c => c.toUpperCase()),
+    [wallpaper.name]
+  );
 
   const [retrySrc, setRetrySrc] = useState(null);
 
@@ -218,7 +297,6 @@ const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, onDown
     }
   }, [baseImageUrl]);
 
-  // Retry via Rust proxy if direct load fails
   useEffect(() => {
     if (!error || !baseImageUrl.startsWith('http') || retrySrc) return;
     (async () => {
@@ -227,7 +305,6 @@ const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, onDown
         const blob = new Blob([new Uint8Array(bytes)]);
         setRetrySrc(URL.createObjectURL(blob));
       } catch {
-        // Both methods failed — keep showing error state
       }
     })();
   }, [error, baseImageUrl, retrySrc]);
@@ -404,6 +481,8 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [fetchError, setFetchError] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const splashStartRef = useRef(Date.now());
   const fetchAbortRef = useRef(null);
   const deferredSearch = useDeferredValue(search);
   const [displayCount, setDisplayCount] = useState(48);
@@ -444,12 +523,12 @@ export default function App() {
     }
   }, [showNextToast]);
 
-  const intervals = [
+  const intervals = useMemo(() => [
     { label: '5m', value: 5 * 60 * 1000 },
     { label: '15m', value: 15 * 60 * 1000 },
     { label: '30m', value: 30 * 60 * 1000 },
     { label: '1h', value: 60 * 60 * 1000 },
-  ];
+  ], []);
   const [autoRotate, setAutoRotate] = useState(() => localStorage.getItem('cozy_autoRotate') === 'true');
   const [rotateInterval, setRotateInterval] = useState(() => parseInt(localStorage.getItem('cozy_rotateInterval')) || 15 * 60 * 1000);
   const [rotateCategory, setRotateCategory] = useState(() => localStorage.getItem('cozy_rotateCategory') || 'All');
@@ -498,6 +577,15 @@ export default function App() {
       })
       .finally(() => setFetching(false));
   }, []);
+
+  useEffect(() => {
+    if (!fetching) {
+      const elapsed = Date.now() - splashStartRef.current;
+      const remaining = Math.max(0, 2700 - elapsed);
+      const timer = setTimeout(() => setShowSplash(false), remaining);
+      return () => clearTimeout(timer);
+    }
+  }, [fetching]);
 
   useEffect(() => {
     localStorage.setItem('cozy_localFolders', JSON.stringify(localFolders));
@@ -761,7 +849,7 @@ export default function App() {
     document.title = `CozyPixels — ${filtered.length} Wallpaper${filtered.length !== 1 ? 's' : ''}`;
   }, [filtered.length]);
 
-  const previewIdx = preview ? filtered.findIndex(w => w.path === preview.path) : -1;
+  const previewIdx = useMemo(() => preview ? filtered.findIndex(w => w.path === preview.path) : -1, [preview, filtered]);
   const hasNext = previewIdx !== -1 && previewIdx < filtered.length - 1;
   const hasPrev = previewIdx > 0;
   const handleNext = useCallback(() => {
@@ -771,8 +859,12 @@ export default function App() {
     if (previewIdx > 0) setPreview(filtered[previewIdx - 1]);
   }, [filtered, previewIdx]);
 
+  const handlePreview = useCallback((w) => setPreview(w), []);
+  const displayedWallpapers = useMemo(() => filtered.slice(0, displayCount), [filtered, displayCount]);
+
   return (
     <div className="app">
+      <SplashScreen visible={showSplash} />
       <aside className="sidebar">
         <div className="logo">
           <LuSparkles size={18} />
@@ -923,12 +1015,12 @@ export default function App() {
         </div>
 
         <div className="gallery" style={{ position: 'relative' }}>
-          {filtered.slice(0, displayCount).map((w, i) => (
+          {displayedWallpapers.map((w, i) => (
             <WallpaperCard
               key={`${w.category}-${w.name}-${i}`}
               wallpaper={w}
               onSetWallpaper={handleSetWallpaper}
-              onPreview={setPreview}
+              onPreview={handlePreview}
               onDownload={handleDownload}
               setting={settingWallpaper === w.path}
             />
