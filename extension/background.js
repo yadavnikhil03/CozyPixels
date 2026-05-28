@@ -1,5 +1,5 @@
-const DEFAULT_API = 'https://cozypixels.onrender.com/api/wallpapers';
-const STATIC_BASE = 'https://cozypixels.onrender.com';
+const DEFAULT_API = 'https://cozy-pixels.vercel.app/api/wallpapers';
+const STATIC_BASE = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public';
 
 // Default interval in minutes
 const DEFAULT_INTERVAL = 60;
