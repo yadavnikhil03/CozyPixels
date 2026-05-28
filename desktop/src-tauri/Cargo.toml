@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "1.0.5"
+version = "1.0.6"
 description = "CozyPixels Desktop - Wallpaper Manager"
 authors = ["Nikhil Yadav <@yadavnikhil03>"]
 edition = "2021"
@@ -13,7 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
+tauri = { version = "2", features = [ "tray-icon"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -21,7 +21,6 @@ tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", features = ["blocking", "json"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-process = "2"
-regex = "1"
 url = "2"
 percent-encoding = "2"
 

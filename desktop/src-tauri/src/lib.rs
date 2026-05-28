@@ -1,9 +1,16 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::sync::OnceLock;
 use std::thread;
 use std::time::Duration;
 use tauri::Emitter;
+
+fn image_cache() -> &'static Mutex<HashMap<String, Vec<u8>>> {
+    static CACHE: OnceLock<Mutex<HashMap<String, Vec<u8>>>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
 
 static ROTATE_RUNNING: AtomicBool = AtomicBool::new(false);
 static ROTATE_INTERVAL: AtomicU64 = AtomicU64::new(900000);
@@ -116,7 +123,7 @@ fn set_wallpaper_os(path: &str) -> Result<(), String> {
             ])
             .status();
 
-        if gnome.is_err() || !gnome.unwrap().success() {
+        if gnome.map_or(true, |s| !s.success()) {
             std::process::Command::new("feh")
                 .args(&["--bg-scale", path])
                 .status()
@@ -309,213 +316,6 @@ fn scan_local_directory(path: String) -> Result<Vec<String>, String> {
     Ok(images)
 }
 
-#[tauri::command]
-async fn fetch_web_images(url: String) -> Result<Vec<String>, String> {
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let response = client.get(&url).send().await.map_err(|e| e.to_string())?;
-    let html = response.text().await.map_err(|e| e.to_string())?;
-    
-    let base_url = url::Url::parse(&url).map_err(|e| e.to_string())?;
-    let mut images = Vec::new();
-    
-    let srcset_re = regex::Regex::new(r#"(?i)srcset\s*=\s*["']([^"']+)["']"#).unwrap();
-    for cap in srcset_re.captures_iter(&html) {
-        if let Some(srcset) = cap.get(1) {
-            let mut best_url = "";
-            let mut best_w: u32 = 0;
-            for entry in srcset.as_str().split(',') {
-                let parts: Vec<&str> = entry.trim().split_whitespace().collect();
-                if parts.len() >= 2 {
-                    let w_str = parts[1].trim_end_matches('w').trim_end_matches('x');
-                    if let Ok(w) = w_str.parse::<u32>() {
-                        if w > best_w {
-                            best_w = w;
-                            best_url = parts[0];
-                        }
-                    }
-                } else if parts.len() == 1 && !parts[0].is_empty() {
-                    if best_w == 0 {
-                        best_url = parts[0];
-                    }
-                }
-            }
-            if !best_url.is_empty() {
-                if let Ok(parsed) = base_url.join(best_url) {
-                    images.push(parsed.to_string());
-                }
-            }
-        }
-    }
-    let ext_re = regex::Regex::new(r#"(?i)(?:https?://|/|\.\./)[^"'\s<>\\]+\.(?:jpg|jpeg|png|webp)(?:\?[^"'\s<>\\]*)?"#).unwrap();
-    for cap in ext_re.captures_iter(&html) {
-        if let Some(src) = cap.get(0) {
-            let s = src.as_str();
-
-            if !s.to_lowercase().ends_with(".gif") && !s.to_lowercase().ends_with(".svg") {
-                if let Ok(parsed) = base_url.join(s) {
-                    images.push(parsed.to_string());
-                }
-            }
-        }
-    }
-    let attr_re = regex::Regex::new(r#"(?i)(?:src|data-src|data-original|data-lazy-src|data-highres|data-full|data-large|content|href)\s*=\s*["']([^"']+)["']"#).unwrap();
-    for cap in attr_re.captures_iter(&html) {
-        if let Some(src) = cap.get(1) {
-            let s = src.as_str();
-            let lower = s.to_lowercase();
-            if lower.ends_with(".jpg") || lower.ends_with(".jpeg") || lower.ends_with(".png") || lower.ends_with(".webp") || lower.contains("images.") || lower.contains("format=jpg") || lower.contains("format=webp") || lower.contains("media.") || lower.contains("image/") {
-                if let Ok(parsed) = base_url.join(s) {
-                    images.push(parsed.to_string());
-                }
-            }
-        }
-    }
-
-    images.sort();
-    images.dedup();
-    images.retain(|url| {
-        let lower = url.to_lowercase();
-        !lower.contains("favicon") && 
-        !lower.contains("avatar") && 
-        !lower.contains("icon") &&
-        !lower.contains("logo") &&
-        !lower.contains("spinner") &&
-        !lower.contains("sprite") &&
-        !lower.contains("emoji") &&
-        !lower.contains("badge") &&
-        !lower.contains("button") &&
-        !lower.contains("banner") && 
-        !lower.contains("thumbnail") &&
-        !lower.contains("thumb") &&
-        !lower.contains("/s/") &&
-        !lower.contains("_small") &&
-        !lower.contains("_tiny") &&
-        !lower.contains("1x1") &&
-        !lower.contains("pixel") &&
-        !lower.contains("tracking") &&
-        !lower.contains("spacer") &&
-        !lower.contains("placeholder") &&
-        !lower.contains("google-play") &&
-        !lower.contains("app-store") &&
-        !lower.contains("play-store") &&
-        !lower.contains("apple-store") &&
-        !lower.ends_with(".svg") &&
-        !lower.ends_with(".gif")
-    });
-    for img in images.iter_mut() {
-        if img.contains("images.unsplash.com") {
-            *img = regex::Regex::new(r"(?i)[?&]w=\d+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]h=\d+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]q=\d+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]fm=\w+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]auto=\w+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]fit=\w+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]crop=\w+").unwrap().replace_all(img, "").to_string();
-            *img = img.trim_end_matches('?').trim_end_matches('&').to_string();
-            if img.contains("?") {
-                img.push_str("&w=3840&q=100&fm=jpg");
-            } else {
-                img.push_str("?w=3840&q=100&fm=jpg");
-            }
-            continue;
-        }
-        if img.contains("preview.redd.it") {
-            *img = img.replace("preview.redd.it", "i.redd.it");
-            if let Some(pos) = img.find('?') {
-                *img = img[..pos].to_string();
-            }
-            continue;
-        }
-        if img.contains("i.pinimg.com") {
-            *img = regex::Regex::new(r"(?i)i\.pinimg\.com/\d+x/").unwrap().replace_all(img, "i.pinimg.com/originals/").to_string();
-            *img = regex::Regex::new(r"(?i)i\.pinimg\.com/\d+x\d+/").unwrap().replace_all(img, "i.pinimg.com/originals/").to_string();
-            continue;
-        }
-        if img.contains("images.pexels.com") {
-            *img = regex::Regex::new(r"(?i)[?&]auto=compress[^&]*").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]cs=\w+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]w=\d+").unwrap().replace_all(img, "").to_string();
-            *img = regex::Regex::new(r"(?i)[?&]h=\d+").unwrap().replace_all(img, "").to_string();
-            *img = img.trim_end_matches('?').trim_end_matches('&').to_string();
-            continue;
-        }
-        if img.contains("staticflickr.com") || img.contains("live.staticflickr.com") {
-            *img = regex::Regex::new(r"(?i)_[smtqnzc]\.").unwrap().replace_all(img, "_b.").to_string();
-            continue;
-        }
-        if img.contains("i.imgur.com") {
-            *img = regex::Regex::new(r"(?i)([a-zA-Z0-9]+)[sbtmlh]\.(jpg|jpeg|png|webp)").unwrap().replace_all(img, "$1.$2").to_string();
-            continue;
-        }
-        if img.contains("pixabay.com") {
-            *img = regex::Regex::new(r"(?i)_\d+\.").unwrap().replace_all(img, "_1280.").to_string();
-            continue;
-        }
-        if img.contains("tumblr.com") {
-            *img = regex::Regex::new(r"(?i)_(\d+)\.(jpg|png|webp)").unwrap().replace_all(img, "_1280.$2").to_string();
-            continue;
-        }
-        if img.contains("th.wallhaven.cc/small") {
-            let wh_re = regex::Regex::new(r"(?i)th\.wallhaven\.cc/small/([a-z0-9]+)/([a-z0-9]+)\.(jpg|png)").unwrap();
-            *img = wh_re.replace_all(img, "w.wallhaven.cc/full/$1/wallhaven-$2.$3").to_string();
-            continue;
-        }
-        *img = regex::Regex::new(r"(?i)[-_]\d+x\d+\.(jpg|jpeg|png|webp)").unwrap().replace_all(img, ".$1").to_string();
-        *img = regex::Regex::new(r"(?i)[?&](?:w|width|h|height|size|resize)=\d+").unwrap().replace_all(img, "").to_string();
-        *img = regex::Regex::new(r"[?&]$").unwrap().replace_all(img, "").to_string();
-    }
-
-    images.sort();
-    images.dedup();
-    
-    let filter_client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(8))
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
-        .build()
-        .unwrap_or_default();
-
-    let mut tasks = Vec::new();
-    for img in images.into_iter() {
-        let c = filter_client.clone();
-        tasks.push(tokio::spawn(async move {
-            if img.contains("images.unsplash.com") || img.contains("i.pinimg.com/originals") || 
-               img.contains("w.wallhaven.cc/full") || img.contains("i.redd.it") ||
-               img.contains("_1280.") || img.contains("_b.") || img.contains("/originals/") {
-                return Some(img);
-            }
-            
-            if let Ok(resp) = c.head(&img).send().await {
-                if resp.status().is_success() {
-                    if let Some(len) = resp.content_length() {
-                        if len > 0 && len < 100_000 {
-                            return None;
-                        }
-                    }
-                    return Some(img);
-                } else if resp.status().as_u16() == 403 || resp.status().as_u16() == 405 {
-                    return Some(img);
-                }
-                return None;
-            }
-            Some(img)
-        }));
-    }
-    
-    let mut final_images = Vec::new();
-    for task in tasks {
-        if let Ok(Some(img)) = task.await {
-            final_images.push(img);
-        }
-    }
-    
-    Ok(final_images)
-}
-
 use tauri::Manager;
 use tauri::{
     menu::{Menu, MenuItem},
@@ -524,20 +324,54 @@ use tauri::{
 
 #[tauri::command]
 async fn fetch_image_bytes(url: String) -> Result<Vec<u8>, String> {
+    {
+        let cache = image_cache().lock().unwrap();
+        if let Some(bytes) = cache.get(&url) {
+            return Ok(bytes.clone());
+        }
+    }
+
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(15))
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
         .build()
         .map_err(|e| e.to_string())?;
-        
-    let resp = client.get(&url).send().await.map_err(|e| e.to_string())?;
-    
+
+    let referer = if let Ok(parsed) = url::Url::parse(&url) {
+        format!("{}://{}/", parsed.scheme(), parsed.host_str().unwrap_or(""))
+    } else {
+        String::new()
+    };
+
+    let mut req = client.get(&url)
+        .header("Accept", "image/avif,image/webp,image/apng,image/png,image/jpeg,*/*;q=0.8");
+
+    if !referer.is_empty() {
+        req = req.header("Referer", &referer);
+    }
+
+    let resp = req.send().await.map_err(|e| format!("Download failed: {}", e))?;
+
     if !resp.status().is_success() {
         return Err(format!("HTTP Error: {}", resp.status()));
     }
-    
-    let bytes = resp.bytes().await.map_err(|e| e.to_string())?;
-    Ok(bytes.to_vec())
+
+    let bytes = resp.bytes().await.map_err(|e| format!("Read failed: {}", e))?.to_vec();
+
+    {
+        let mut cache = image_cache().lock().unwrap();
+        if cache.len() > 100 {
+            cache.clear();
+        }
+        cache.insert(url, bytes.clone());
+    }
+
+    Ok(bytes)
+}
+
+#[tauri::command]
+async fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
+    std::fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -556,11 +390,45 @@ pub fn run() {
             } else {
                 decoded
             };
-            
-            println!("COZY PROTOCOL REQUEST: path={} local_path={}", path, local_path);
-            
+
+            // Security: normalize path to prevent directory traversal
+            let normalized = std::path::Path::new(&local_path)
+                .components()
+                .collect::<std::path::PathBuf>();
+            let normalized_str = normalized.to_string_lossy().to_string();
+
+            if local_path != normalized_str {
+                return tauri::http::Response::builder()
+                    .status(400)
+                    .body(Vec::new())
+                    .unwrap();
+            }
+
+            let lower_path = local_path.to_lowercase();
+            let is_valid_image = lower_path.ends_with(".png")
+                || lower_path.ends_with(".jpg")
+                || lower_path.ends_with(".jpeg")
+                || lower_path.ends_with(".gif")
+                || lower_path.ends_with(".webp")
+                || lower_path.ends_with(".bmp");
+
+            if !is_valid_image {
+                return tauri::http::Response::builder()
+                    .status(403)
+                    .body(Vec::new())
+                    .unwrap();
+            }
+
+            if let Ok(metadata) = std::fs::metadata(&local_path) {
+                if metadata.len() > 50 * 1024 * 1024 {
+                    return tauri::http::Response::builder()
+                        .status(413)
+                        .body(Vec::new())
+                        .unwrap();
+                }
+            }
+
             if let Ok(data) = std::fs::read(&local_path) {
-                let lower_path = local_path.to_lowercase();
                 let mime = if lower_path.ends_with(".png") {
                     "image/png"
                 } else if lower_path.ends_with(".gif") {
@@ -572,7 +440,6 @@ pub fn run() {
                 };
 
                 tauri::http::Response::builder()
-                    .header("Access-Control-Allow-Origin", "*")
                     .header("Content-Type", mime)
                     .body(data)
                     .unwrap()
@@ -602,7 +469,7 @@ pub fn run() {
                     }
                     _ => {}
                 })
-                .icon(app.default_window_icon().unwrap().clone())
+                .icon(app.default_window_icon().cloned().expect("No default window icon configured - check tauri.conf.json"))
                 .build(app)?;
 
             // Hide window on boot if started via autostart
@@ -627,8 +494,8 @@ pub fn run() {
             get_rotate_status,
             update_rotate_interval,
             scan_local_directory,
-            fetch_web_images,
             fetch_image_bytes,
+            read_file_bytes,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
