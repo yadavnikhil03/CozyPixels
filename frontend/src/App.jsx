@@ -7,7 +7,7 @@ import SanctuaryMode from './components/forgeui/sanctuary-mode';
 import './index.css';
 
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
-const STATIC_URL = import.meta.env.VITE_STATIC_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
+const STATIC_URL = import.meta.env.VITE_STATIC_URL || (import.meta.env.PROD ? 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public' : 'http://localhost:3001');
 
 const promoSectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -345,7 +345,7 @@ const ExtensionPromo = ({ onOpenModal }) => {
           </motion.button>
           <motion.a 
             className="apple-promo-btn" 
-            href="https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.5_x64-setup.exe"
+            href="https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.7_x64-setup.exe"
             style={{ backgroundColor: 'transparent', border: '1px solid rgba(255, 255, 255, 0.5)', color: '#ffffff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
             whileHover={{ scale: 1.05, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: '#ffffff' }}
             whileTap={{ scale: 0.95 }}
