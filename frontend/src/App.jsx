@@ -6,7 +6,7 @@ import FlipText from './components/forgeui/flip-text';
 import SanctuaryMode from './components/forgeui/sanctuary-mode';
 import './index.css';
 
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
+const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
 const STATIC_URL = import.meta.env.VITE_STATIC_URL || (import.meta.env.PROD ? 'https://cozy-pixels.vercel.app' : 'http://localhost:3001');
 
 const promoSectionVariants = {
