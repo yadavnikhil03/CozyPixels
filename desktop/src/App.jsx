@@ -225,7 +225,7 @@ const UpdateModal = ({ show, onClose, state, version, progress, errorMsg, onInst
 };
 
 const API_URL = 'https://cozy-pixels.vercel.app/api';
-const STATIC_URL = 'https://cozy-pixels.vercel.app';
+const STATIC_URL = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public';
 
 const Toast = ({ message, type }) => {
   const iconMap = {
