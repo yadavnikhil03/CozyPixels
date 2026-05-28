@@ -92,6 +92,21 @@ const SplashScreen = ({ visible }) => {
 
 const UpdateModal = ({ show, onClose, state, version, progress, errorMsg, onInstall }) => {
   const trapRef = useFocusTrap(show);
+  const statusLabel = {
+    checking: 'Checking for updates',
+    available: 'Update ready',
+    uptodate: 'All caught up',
+    downloading: 'Installing update',
+    error: 'Update failed',
+  }[state] || 'Update';
+
+  const statusHint = {
+    checking: 'Checking for updates…',
+    available: 'A newer desktop build is available.',
+    uptodate: "You're on the latest version.",
+    downloading: 'Installer is running. Keep the app open.',
+    error: 'The update check could not complete.',
+  }[state] || '';
 
   useEffect(() => {
     if (state === 'uptodate') {
@@ -121,102 +136,64 @@ const UpdateModal = ({ show, onClose, state, version, progress, errorMsg, onInst
             transition={{ type: 'spring', damping: 28, stiffness: 340 }}
             onClick={e => e.stopPropagation()}
           >
-            {state === 'checking' && (
-              <div className="update-content">
-                <div className="update-icon-wrap update-icon--checking">
-                  <svg className="update-spinner" viewBox="0 0 50 50">
-                    <defs>
-                      <linearGradient id="update-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="var(--md-sys-color-primary)" />
-                        <stop offset="100%" stopColor="#5E5CE6" />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="25" cy="25" r="20" stroke="url(#update-grad)" strokeWidth="4" fill="none" strokeLinecap="round" strokeDasharray="90, 150" />
-                  </svg>
-                </div>
-                <h3 className="update-title">Checking for updates</h3>
-                <p className="update-desc">Looking for the latest version...</p>
-              </div>
-            )}
+            <div className="update-frame">
 
-            {state === 'available' && (
-              <div className="update-content">
-                <motion.div 
-                  className="update-icon-wrap update-icon--available"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
-                >
-                  <LuDownload size={28} />
-                </motion.div>
-                <h3 className="update-title">Update Available</h3>
-                <p className="update-desc">Version <strong>{version}</strong> is ready to install</p>
-                <div className="update-actions">
-                  <button className="update-btn update-btn--ghost" onClick={onClose}>Later</button>
-                  <button className="update-btn update-btn--primary" onClick={onInstall}>
-                    <LuDownload size={15} />
-                    Install Now
-                  </button>
+              {state === 'checking' && (
+                <div className="update-content update-content--tight">
+                  {/* status chip shows spinner; content kept minimal */}
+                  <p className="update-desc">Looking for the latest version.</p>
                 </div>
-              </div>
-            )}
+              )}
 
-            {state === 'uptodate' && (
-              <div className="update-content">
-                <motion.div 
-                  className="update-icon-wrap update-icon--success"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
-                >
-                  <LuCheck size={28} />
-                </motion.div>
-                <h3 className="update-title">You're up to date!</h3>
-                <p className="update-desc">CozyPixels v{version} is the latest version</p>
-                <div className="update-actions">
-                  <button className="update-btn update-btn--primary" onClick={onClose}>Awesome!</button>
-                </div>
-              </div>
-            )}
-
-            {state === 'downloading' && (
-              <div className="update-content">
-                <div className="update-icon-wrap update-icon--downloading">
-                  <LuDownload size={28} className="update-bounce" />
-                </div>
-                <h3 className="update-title">Downloading Update</h3>
-                <p className="update-desc">Installing v{version}... Please wait</p>
-                <div className="update-progress-wrap">
-                  <div className="update-progress-track">
-                    <motion.div 
-                      className="update-progress-fill"
-                      initial={{ width: '0%' }}
-                      animate={{ width: progress > 0 ? `${progress}%` : '100%' }}
-                      transition={progress > 0 ? { duration: 0.3 } : { duration: 2, repeat: Infinity, ease: 'linear' }}
-                    />
+              {state === 'available' && (
+                <div className="update-content update-content--tight">
+                  <h2 className="update-available-title">Update available</h2>
+                  <p className="update-version-large">{version}</p>
+                  <div className="update-actions">
+                    <button className="update-btn update-btn--ghost" onClick={onClose}>Later</button>
+                    <button className="update-btn update-btn--primary" onClick={onInstall}>Install</button>
                   </div>
-                  {progress > 0 && <span className="update-progress-text">{Math.round(progress)}%</span>}
                 </div>
-              </div>
-            )}
+              )}
 
-            {state === 'error' && (
-              <div className="update-content">
-                <motion.div 
-                  className="update-icon-wrap update-icon--error"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: 'spring', damping: 12, stiffness: 200, delay: 0.1 }}
-                >
-                  <LuX size={28} />
-                </motion.div>
-                <h3 className="update-title">Update Failed</h3>
-                <p className="update-desc">{errorMsg || 'Could not check for updates'}</p>
-                <div className="update-actions">
-                  <button className="update-btn update-btn--primary" onClick={onClose}>Close</button>
+              {state === 'uptodate' && (
+                <div className="update-content update-content--tight">
+                  <p className="update-desc update-desc--prominent">You're already up to date.</p>
+                  <div className="update-actions">
+                    <button className="update-btn update-btn--primary" onClick={onClose}>Awesome!</button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {state === 'downloading' && (
+                <div className="update-content update-content--tight">
+                  <p className="update-desc update-desc--prominent">Installing update. Keep the app open until it finishes.</p>
+                  <div className="update-progress-wrap">
+                    <div className="update-progress-track">
+                      <motion.div 
+                        className="update-progress-fill"
+                        initial={{ width: '0%' }}
+                        animate={{ width: progress > 0 ? `${progress}%` : '100%' }}
+                        transition={progress > 0 ? { duration: 0.3 } : { duration: 2, repeat: Infinity, ease: 'linear' }}
+                      />
+                    </div>
+                    <div className="update-progress-meta">
+                      <span>{progress > 0 ? `${Math.round(progress)}%` : 'Preparing installer'}</span>
+                      <span>{progress > 0 ? 'Downloading and installing' : 'This can take a moment'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {state === 'error' && (
+                <div className="update-content update-content--tight">
+                  <p className="update-desc update-desc--prominent">{errorMsg || 'Could not check for updates'}</p>
+                  <div className="update-actions">
+                    <button className="update-btn update-btn--primary" onClick={onClose}>Close</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -226,6 +203,7 @@ const UpdateModal = ({ show, onClose, state, version, progress, errorMsg, onInst
 
 const API_URL = 'https://cozy-pixels.vercel.app/api';
 const STATIC_URL = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public';
+const APP_VERSION = '1.0.8';
 
 const Toast = ({ message, type }) => {
   const iconMap = {
@@ -474,6 +452,7 @@ const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, onDownl
 };
 
 export default function App() {
+  const updatesEnabled = !import.meta.env.DEV;
   const [wallpapers, setWallpapers] = useState([]);
   const [localFolders, setLocalFolders] = useState(() => JSON.parse(localStorage.getItem('cozy_localFolders') || '[]'));
   const [customWallpapers, setCustomWallpapers] = useState([]);
@@ -623,6 +602,27 @@ export default function App() {
   const closeUpdateModal = useCallback(() => setUpdateModal(prev => ({ ...prev, show: false })), []);
 
   const performUpdate = useCallback(async (manual = false) => {
+    if (!updatesEnabled) {
+      if (manual) {
+        // create a mock update that simulates a gradual download in dev
+        pendingUpdateRef.current = {
+          version: APP_VERSION,
+          downloadAndInstall: async (onEvent) => {
+            onEvent?.({ event: 'Started', data: { contentLength: 100 } });
+            // simulate chunked progress (10 steps)
+            for (let i = 1; i <= 10; i++) {
+              // wait a bit to show animation
+              // eslint-disable-next-line no-await-in-loop
+              await new Promise(r => setTimeout(r, 180));
+              onEvent?.({ event: 'Progress', data: { chunkLength: 10 } });
+            }
+            onEvent?.({ event: 'Finished' });
+          },
+        };
+        showUpdateModal({ state: 'available', version: APP_VERSION });
+      }
+      return;
+    }
     if (manual) showUpdateModal({ state: 'checking', version: '', progress: 0, error: '' });
     try {
       const update = await check();
@@ -630,8 +630,7 @@ export default function App() {
         pendingUpdateRef.current = update;
         showUpdateModal({ state: 'available', version: update.version });
       } else if (manual) {
-        const currentVersion = '1.0.6';
-        showUpdateModal({ state: 'uptodate', version: currentVersion });
+        showUpdateModal({ state: 'uptodate', version: APP_VERSION });
       }
     } catch (err) {
       if (manual) {
@@ -640,7 +639,7 @@ export default function App() {
         console.error('Update check failed:', err);
       }
     }
-  }, [showUpdateModal, closeUpdateModal]);
+  }, [showUpdateModal, closeUpdateModal, updatesEnabled]);
 
   const handleInstallUpdate = useCallback(async () => {
     const update = pendingUpdateRef.current;
@@ -661,15 +660,26 @@ export default function App() {
           setUpdateModal(prev => ({ ...prev, progress: 100 }));
         }
       });
-      await relaunch();
+      if (updatesEnabled) {
+        // in production, relaunch will restart the app after install
+        await relaunch();
+      } else {
+        // dev: show installed state briefly then close
+        showUpdateModal({ state: 'uptodate', version: APP_VERSION });
+        setTimeout(() => closeUpdateModal(), 1200);
+      }
     } catch (err) {
       showUpdateModal({ state: 'error', error: String(err) });
     }
-  }, [showUpdateModal]);
+  }, [showUpdateModal, updatesEnabled]);
 
-  useEffect(() => { performUpdate(false); }, []);
+  useEffect(() => {
+    if (updatesEnabled) performUpdate(false);
+  }, [performUpdate, updatesEnabled]);
 
-  const handleManualUpdateCheck = useCallback(() => performUpdate(true), [performUpdate]);
+  const handleManualUpdateCheck = useCallback(() => {
+    performUpdate(true);
+  }, [performUpdate]);
 
 
   useEffect(() => {
@@ -988,10 +998,10 @@ export default function App() {
             </AnimatePresence>
           </div>
 
-          <button className="nav__item" onClick={handleManualUpdateCheck} style={{ marginTop: '4px' }}>
+          <button className="nav__item" onClick={handleManualUpdateCheck} title={updatesEnabled ? 'Check for updates' : 'Open a mock update flow for testing'} style={{ marginTop: '4px' }}>
             <LuDownload size={15} />
             <span>Check for updates</span>
-            <span className="nav__badge" style={{ fontSize: '10px', opacity: 0.5 }}>v1.0.6</span>
+            <span className="nav__badge" style={{ fontSize: '10px', opacity: 0.5 }}>v{APP_VERSION}</span>
           </button>
         </div>
       </aside>

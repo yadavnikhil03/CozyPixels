@@ -18,13 +18,6 @@ CozyPixels started as a collection of beautiful wallpapers and turned into a ded
 - **Productivity**: Includes a Pomodoro timer built directly into the site.
 - **Ambient Sounds**: Listen to high-quality ambient noise to stay in the zone.
 
-## Screenshots
-
-<img width="100%" alt="Screenshot 1" src="https://github.com/user-attachments/assets/34c562e1-95da-4c78-94e0-5ad3c4b53b85" />
-<img width="100%" alt="Screenshot 2" src="https://github.com/user-attachments/assets/72a74c2d-5608-4a25-aec1-dd9541a84ffe" />
-<img width="100%" alt="Screenshot 3" src="https://github.com/user-attachments/assets/a231d719-b834-42e9-9539-29dfb5156a90" />
-<img width="100%" alt="Screenshot 4" src="https://github.com/user-attachments/assets/7216f9d3-60ff-4ac0-9b33-389613d365c4" />
-
 ## Desktop App & Browser Extension
 We built native desktop and browser apps to integrate these wallpapers directly into your daily workflow.
 
@@ -34,7 +27,7 @@ The standalone desktop app gives you a beautiful native experience to manage and
 - Automatically changes your desktop wallpaper on a customizable timer.
 - Runs silently in the system tray.
 
-**[Download the Windows App](https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.5_x64-setup.exe)**
+**[Download the Windows App](https://github.com/yadavnikhil03/CozyPixels/releases/latest/download/CozyPixels_1.0.8_x64-setup.exe)**
 
 ### Browser Extension (Cozy Engine)
 We also built a Chrome extension that replaces your new tab page with a rotating cozy wallpaper. 
@@ -43,10 +36,13 @@ We also built a Chrome extension that replaces your new tab page with a rotating
 
 ### Installation
 1. Go to [CozyPixels](https://cozy-pixels.vercel.app/).
-2. Click **"Install Cozy Engine"** to download the extension zip.
+2. Click **"Install Extension"** to download the extension package.
 3. Open `chrome://extensions` in your browser.
 4. Turn on **Developer mode**.
 5. Click **Load unpacked** and select the folder you extracted.
+
+### Local Development
+If images do not appear while running locally, make sure the backend is running on port `3001` and the frontend is running on port `5176`. The site and extension both read wallpapers from the shared static image folders.
 
 ## Collections
 We feature wallpapers based on popular developer themes:
@@ -69,7 +65,7 @@ Big thanks to the communities that created these aesthetics:
 And massive credit to the original wallpaper repositories and sources:
 - [Catppuccin wallpaper repo](https://github.com/orangci/walls-catppuccin-mocha) (by orangci)
 - [Nord wallpaper repo](https://github.com/linuxdotexe/nordic-wallpapers) (by linuxdotexe)
-- [Onedark wallpaper repo](https://github.com/Narmis-E/onedark-wallpapers) (by Narmis-E)
+- [One Dark wallpaper repo](https://github.com/Narmis-E/onedark-wallpapers) (by Narmis-E)
 - [r/unixporn](https://www.reddit.com/r/unixporn) and [r/wallpaper](https://www.reddit.com/r/wallpaper)
 - And all the talented artists on X and Pinterest.
 

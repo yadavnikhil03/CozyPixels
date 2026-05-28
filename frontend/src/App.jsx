@@ -8,6 +8,7 @@ import './index.css';
 
 const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
 const STATIC_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_STATIC_URL || 'http://localhost:3001');
+const imageUrl = (path) => `${STATIC_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
 const promoSectionVariants = {
   hidden: { opacity: 0, y: 40 },
@@ -233,7 +234,7 @@ const Hero = ({ totalCount = 0 }) => (
               animate={{ opacity: 1, y: 0, transition: { delay: 0.3 + i * 0.06, duration: 0.6 } }}
             >
               <img
-                src={`${STATIC_URL}/${path}`}
+                src={imageUrl(path)}
                 alt={`wallpaper ${i + 1}`}
                 className="mosaic-img"
                 loading="eager"
@@ -371,7 +372,7 @@ const ExtensionPromo = ({ onOpenModal }) => {
           <div 
             className="apple-browser-body"
             style={{
-              backgroundImage: `url('${STATIC_URL}/${currentWallpaper.path}')`,
+              backgroundImage: `url('${imageUrl(currentWallpaper.path)}')`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
               opacity: fade ? 1 : 0,
