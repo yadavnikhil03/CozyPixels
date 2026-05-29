@@ -1,7 +1,10 @@
 {
-  "name": "desktop",
+  "name": "cozypixels-desktop",
   "private": true,
   "version": "1.0.8",
+  "description": "CozyPixels Desktop App - A curated collection of minimalist, serene, and high-resolution wallpapers featuring Catppuccin and Nord.",
+  "keywords": ["cozypixels", "wallpapers", "catppuccin", "nord", "onedark", "productivity", "pomodoro", "desktop-app", "sleepycathey"],
+  "author": "Nikhil Yadav (yadavnikhil03)",
   "type": "module",
   "scripts": {
     "dev": "vite",

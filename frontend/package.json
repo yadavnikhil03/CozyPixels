@@ -1,7 +1,10 @@
 {
-  "name": "frontend",
+  "name": "cozypixels-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.8",
+  "description": "CozyPixels Website & Extension Core - A curated collection of minimalist, serene, and high-resolution wallpapers featuring Catppuccin and Nord.",
+  "keywords": ["cozypixels", "wallpapers", "catppuccin", "nord", "onedark", "productivity", "pomodoro", "extension", "sleepycathey"],
+  "author": "Nikhil Yadav (yadavnikhil03)",
   "type": "module",
   "scripts": {
     "dev": "vite",
