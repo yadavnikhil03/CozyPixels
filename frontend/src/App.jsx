@@ -7,7 +7,7 @@ import SanctuaryMode from './components/forgeui/sanctuary-mode';
 import './index.css';
 
 const API_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_URL || 'http://localhost:3001/api');
-const STATIC_URL = import.meta.env.PROD ? '' : (import.meta.env.VITE_STATIC_URL || 'http://localhost:3001');
+const STATIC_URL = import.meta.env.PROD ? 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public' : (import.meta.env.VITE_STATIC_URL || 'http://localhost:3001');
 const imageUrl = (path) => `${STATIC_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
 const promoSectionVariants = {

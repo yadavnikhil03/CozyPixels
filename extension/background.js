@@ -1,7 +1,6 @@
 const DEFAULT_API = 'https://cozy-pixels.vercel.app/api/wallpapers';
 const STATIC_BASE = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public';
 
-// Default interval in minutes
 const DEFAULT_INTERVAL = 60;
 
 function arrayBufferToBase64(buffer) {
@@ -14,11 +13,9 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
-// Initial fetch and rotation setup
 chrome.runtime.onInstalled.addListener(async () => {
   console.log('Cozy Engine initialized');
   
-  // Set default interval if not exists
   const result = await chrome.storage.local.get(['rotationInterval']);
   const interval = result.rotationInterval || DEFAULT_INTERVAL;
   if (!result.rotationInterval) {
@@ -62,7 +59,6 @@ async function rotateWallpaper() {
         ? selected.path 
         : `${STATIC_BASE}${selected.path}`;
 
-      // Download and cache the image as a Base64 string for instant loading
       try {
         const imgResponse = await fetch(wallpaperUrl);
         const blob = await imgResponse.blob();
@@ -79,7 +75,6 @@ async function rotateWallpaper() {
         chrome.runtime.sendMessage({ action: "refreshUI" }).catch(() => {});
       } catch (imgErr) {
         console.error('Failed to download image for caching:', imgErr);
-        // Fallback to just saving the URL if caching fails
         await chrome.storage.local.set({ 
           currentWallpaper: wallpaperUrl,
           cachedImage: null,
