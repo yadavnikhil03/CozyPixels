@@ -51,6 +51,12 @@ async function fetchAndSaveWallpapers() {
 async function rotateWallpaper() {
   try {
     const result = await chrome.storage.local.get(['allWallpapers']);
+    if (!result.allWallpapers || result.allWallpapers.length === 0) {
+      console.log('No wallpapers in storage, fetching now...');
+      await fetchAndSaveWallpapers();
+      return; // fetchAndSaveWallpapers calls rotateWallpaper again
+    }
+    
     if (result.allWallpapers && result.allWallpapers.length > 0) {
       const randomIdx = Math.floor(Math.random() * result.allWallpapers.length);
       const selected = result.allWallpapers[randomIdx];
