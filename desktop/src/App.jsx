@@ -738,6 +738,23 @@ export default function App() {
     return () => { u.then(fn => fn()); };
   }, [addToast]);
 
+  useEffect(() => {
+    const uNext = listen('tray-next-wallpaper', () => {
+      if (wallpapers.length > 0) {
+        const randomWallpaper = wallpapers[Math.floor(Math.random() * wallpapers.length)];
+        handleSetWallpaper(randomWallpaper);
+      }
+    });
+    const uToggle = listen('tray-toggle-rotate', () => {
+      setAutoRotate(prev => !prev);
+    });
+    return () => { 
+      uNext.then(fn => fn()); 
+      uToggle.then(fn => fn()); 
+    };
+  }, [wallpapers, autoRotate]);
+
+
 
 
 

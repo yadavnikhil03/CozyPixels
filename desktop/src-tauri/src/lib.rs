@@ -453,7 +453,9 @@ pub fn run() {
         .setup(|app| {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show CozyPixels", true, None::<&str>)?;
-            let menu = Menu::with_items(app, &[&show_i, &quit_i])?;
+            let next_i = MenuItem::with_id(app, "next", "Next Wallpaper", true, None::<&str>)?;
+            let toggle_i = MenuItem::with_id(app, "toggle_rotate", "Toggle Auto-Rotate", true, None::<&str>)?;
+            let menu = Menu::with_items(app, &[&show_i, &next_i, &toggle_i, &quit_i])?;
 
             let _tray = TrayIconBuilder::new()
                 .menu(&menu)
@@ -466,6 +468,12 @@ pub fn run() {
                             let _ = window.show();
                             let _ = window.set_focus();
                         }
+                    }
+                    "next" => {
+                        let _ = app.emit("tray-next-wallpaper", "");
+                    }
+                    "toggle_rotate" => {
+                        let _ = app.emit("tray-toggle-rotate", "");
                     }
                     _ => {}
                 })
