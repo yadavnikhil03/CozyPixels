@@ -201,7 +201,7 @@ const UpdateModal = ({ show, onClose, state, version, progress, errorMsg, onInst
   );
 };
 
-const API_URL = 'https://cozy-pixels.onrender.com/api';
+const API_URL = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public/wallpapers.json';
 const STATIC_URL = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public';
 const APP_VERSION = '1.0.8';
 
@@ -545,7 +545,7 @@ export default function App() {
     setFetchError(false);
     setFetching(true);
 
-    fetch(`${API_URL}/wallpapers`, { signal: controller.signal })
+    fetch(API_URL, { signal: controller.signal })
       .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
       .then(d => { if (Array.isArray(d)) { setWallpapers(d); setFetchError(false); } })
       .catch(e => {

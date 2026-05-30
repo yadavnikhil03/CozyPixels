@@ -1,4 +1,4 @@
-const DEFAULT_API = 'https://cozy-pixels.onrender.com/api/wallpapers';
+const DEFAULT_API = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public/wallpapers.json';
 const STATIC_BASE = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public';
 
 const DEFAULT_INTERVAL = 60;
