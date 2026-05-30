@@ -46,36 +46,53 @@ export default function FaqSection() {
   };
 
   return (
-    <section className="w-full max-w-4xl mx-auto py-16 px-6">
+    <section style={{ width: '100%', maxWidth: '900px', margin: '0 auto', padding: '64px 24px' }}>
       {/* Invisible Schema Markup for Google SEO */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaData) }} />
 
-      <div className="text-center mb-10">
-        <h2 className="text-3xl md:text-4xl font-semibold mb-4 text-[var(--md-sys-color-on-background)]">Frequently Asked Questions</h2>
-        <p className="text-[var(--md-sys-color-on-surface-variant)] max-w-2xl mx-auto">
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h2 className="font-display" style={{ fontSize: '2.5rem', fontWeight: '700', marginBottom: '16px', color: '#1e2444', letterSpacing: '-0.04em' }}>Frequently Asked Questions</h2>
+        <p style={{ color: '#626d86', maxWidth: '650px', margin: '0 auto', fontSize: '1.1rem', lineHeight: '1.6' }}>
           Everything you need to know about setting up the perfect aesthetic workspace, finding cute wallpapers, and managing your device backgrounds.
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {faqs.map((faq, index) => {
           const isOpen = openIndex === index;
           return (
             <div 
               key={index} 
-              className="bg-[var(--md-sys-color-surface-container)] rounded-2xl overflow-hidden transition-all duration-300 border border-[var(--md-sys-color-outline-variant)]"
+              style={{ 
+                background: 'rgba(255, 255, 255, 0.5)', 
+                borderRadius: '16px', 
+                overflow: 'hidden', 
+                border: '1px solid rgba(198, 197, 209, 0.4)',
+                boxShadow: '0 4px 12px rgba(80, 91, 147, 0.05)'
+              }}
             >
               <button
                 onClick={() => toggleFaq(index)}
-                className="w-full text-left px-6 py-5 flex items-center justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--md-sys-color-primary)]"
+                style={{ 
+                  width: '100%', 
+                  textAlign: 'left', 
+                  padding: '20px 24px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-body)'
+                }}
               >
-                <span className="font-medium text-[var(--md-sys-color-on-surface)] pr-4">{faq.question}</span>
+                <span style={{ fontWeight: '600', color: '#2f365e', fontSize: '1.05rem', paddingRight: '16px' }}>{faq.question}</span>
                 <motion.div
                   animate={{ rotate: isOpen ? 180 : 0 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className="text-[var(--md-sys-color-on-surface-variant)] flex-shrink-0"
+                  style={{ color: '#7a84a0', display: 'flex', flexShrink: 0 }}
                 >
-                  <LuChevronDown size={20} />
+                  <LuChevronDown size={24} />
                 </motion.div>
               </button>
               
@@ -87,7 +104,7 @@ export default function FaqSection() {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                   >
-                    <div className="px-6 pb-6 text-[var(--md-sys-color-on-surface-variant)] text-sm md:text-base leading-relaxed">
+                    <div style={{ padding: '0 24px 24px 24px', color: '#52607a', fontSize: '1rem', lineHeight: '1.6' }}>
                       {faq.answer}
                     </div>
                   </motion.div>

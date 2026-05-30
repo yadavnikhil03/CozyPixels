@@ -1,0 +1,48 @@
+---
+export interface Props {
+	title?: string;
+	description?: string;
+}
+
+const { 
+  title = "CozyPixels by Sleepy Cats | Official 4K Wallpapers & App",
+  description = "The definitive and official CozyPixels application inspired by Sleepy Cats. Browse 900+ free minimalist 4K wallpapers in Catppuccin, Nord, and One Dark themes. Download our native Desktop App and Chrome Extension."
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="google-site-verification" content="IAOFE8RkkMrjqNBwZmjWrRemguhVa5URQ_JHlamUo_o" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="canonical" href="https://cozy-pixels.vercel.app/" />
+    <title>{title}</title>
+    <meta name="title" content={title} />
+    <meta name="description" content={description} />
+    <meta name="keywords" content="cozypixels, sleepycathey, sleepy cats cozy pixels, official cozypixels, cozy pixels app, free 4k wallpapers, minimalist wallpapers, catppuccin wallpaper, nord wallpaper, one dark wallpaper, desktop app, chrome extension" />
+    <meta name="author" content="Nikhil Yadav (@yadavnikhil03)" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://cozy-pixels.vercel.app/" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="https://cozy-pixels.vercel.app/og-image.png" />
+    
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@yadavnikhil03" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="https://cozy-pixels.vercel.app/og-image.png" />
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <meta name="theme-color" content="#505b93" />
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

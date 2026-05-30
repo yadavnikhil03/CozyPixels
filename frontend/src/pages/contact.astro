@@ -1,0 +1,23 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../index.css';
+---
+
+<Layout title="Contact Us - CozyPixels" description="Get in touch with the CozyPixels team for support, feature requests, or DMCA inquiries.">
+  <main style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;">
+    <div style="max-width: 600px; width: 100%; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(198, 197, 209, 0.4); padding: 48px; border-radius: 24px; text-align: center; box-shadow: 0 14px 34px -18px rgba(80, 91, 147, 0.34);">
+      <h1 class="font-display" style="font-size: 3rem; color: #1e2444; margin-bottom: 1rem; font-weight: 850; letter-spacing: -0.04em;">Contact Us</h1>
+      
+      <p style="color: #626d86; font-size: 1.1rem; margin-bottom: 2.5rem; line-height: 1.6;">Have a question about the Desktop App, a feature request for the Chrome Extension, or want to submit an artwork? We'd love to hear from you!</p>
+
+      <div style="display: flex; flex-direction: column; gap: 16px; align-items: center;">
+        <a href="mailto:hello@cozypixels.app" class="hero-cta-primary" style="width: 100%; max-width: 400px; justify-content: center; padding: 18px 24px;">
+          Email Us (hello@cozypixels.app)
+        </a>
+        <a href="https://github.com/yadavnikhil03/CozyPixels" target="_blank" rel="noopener" style="display: inline-flex; width: 100%; max-width: 400px; justify-content: center; align-items: center; padding: 18px 24px; border-radius: 999px; background: rgba(80, 91, 147, 0.08); border: 1px solid rgba(80, 91, 147, 0.16); color: #2f365e; font-family: var(--font-label); font-weight: 600; text-decoration: none; transition: all 0.3s ease;">
+          Open an issue on GitHub
+        </a>
+      </div>
+    </div>
+  </main>
+</Layout>

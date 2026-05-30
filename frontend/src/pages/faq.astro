@@ -1,0 +1,13 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FaqSection from '../components/FaqSection.jsx';
+import '../index.css';
+---
+
+<Layout title="FAQ - CozyPixels Wallpaper Collection" description="Frequently asked questions about downloading, managing, and applying CozyPixels aesthetic 4K wallpapers.">
+  <main class="min-h-screen bg-[var(--md-sys-color-background)]">
+    <div class="pt-24 pb-12">
+      <FaqSection client:load />
+    </div>
+  </main>
+</Layout>

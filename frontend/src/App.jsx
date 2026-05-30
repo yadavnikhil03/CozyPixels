@@ -139,7 +139,9 @@ const Header = ({ totalCount }) => {
       <div className="container flex items-center justify-between w-full">
         <span className="logo-text">CozyPixels</span>
         <div className="header-actions">
-          <a href="#about" className="header-link">About</a>
+          <a href="/about" className="header-link">About Us</a>
+          <a href="/faq" className="header-link">FAQ</a>
+          <a href="/contact" className="header-link">Contact</a>
           {totalCount > 0 && (
             <span className="wallpaper-count-header">
               {totalCount} wallpapers
@@ -618,9 +620,36 @@ const Lightbox = ({ wallpaper, onClose, onSanctuary, onShowToast }) => {
 
 
 const Footer = () => (
-  <footer className="footer container">
-    <div className="logo-text">CozyPixels</div>
-    <p>© 2026 CozyPixels. Crafted for serenity.</p>
+  <footer style={{ 
+    marginTop: '6rem',
+    background: 'linear-gradient(to bottom, transparent, var(--color-surface-container))',
+    borderTop: '1px solid var(--color-outline-variant)',
+    padding: '4rem 2rem 2rem',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '2rem'
+  }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+      <span className="logo-text" style={{ fontSize: '2rem' }}>CozyPixels</span>
+      <p style={{ color: 'var(--color-on-surface-variant)', fontSize: '1rem', maxWidth: '400px', textAlign: 'center', lineHeight: '1.6' }}>
+        Curating the most serene 4K wallpapers for your aesthetic workspace.
+      </p>
+    </div>
+    
+    <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', justifyContent: 'center', fontWeight: '500', fontFamily: 'var(--font-label)', letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.85rem' }}>
+      <a href="/about" style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = '#1e2444'} onMouseOut={e => e.target.style.color = 'var(--color-primary)'}>About Us</a>
+      <a href="/faq" style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = '#1e2444'} onMouseOut={e => e.target.style.color = 'var(--color-primary)'}>FAQ</a>
+      <a href="/privacy" style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = '#1e2444'} onMouseOut={e => e.target.style.color = 'var(--color-primary)'}>Privacy Policy</a>
+      <a href="/terms" style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = '#1e2444'} onMouseOut={e => e.target.style.color = 'var(--color-primary)'}>Terms & Conditions</a>
+      <a href="/contact" style={{ color: 'var(--color-primary)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = '#1e2444'} onMouseOut={e => e.target.style.color = 'var(--color-primary)'}>Contact</a>
+    </div>
+    
+    <div style={{ width: '100%', maxWidth: '800px', height: '1px', background: 'var(--color-outline-variant)', opacity: '0.3', margin: '1rem 0' }}></div>
+    
+    <p style={{ color: 'var(--color-on-surface-variant)', fontSize: '0.9rem', opacity: '0.8' }}>
+      © 2026 CozyPixels. Crafted for serenity.
+    </p>
   </footer>
 );
 

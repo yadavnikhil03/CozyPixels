@@ -3,16 +3,31 @@
   "private": true,
   "version": "1.0.8",
   "description": "CozyPixels Website & Extension Core - A curated collection of minimalist, serene, and high-resolution wallpapers featuring Catppuccin and Nord.",
-  "keywords": ["cozypixels", "wallpapers", "catppuccin", "nord", "onedark", "productivity", "pomodoro", "extension", "sleepycathey"],
+  "keywords": [
+    "cozypixels",
+    "wallpapers",
+    "catppuccin",
+    "nord",
+    "onedark",
+    "productivity",
+    "pomodoro",
+    "extension",
+    "sleepycathey"
+  ],
   "author": "Nikhil Yadav (yadavnikhil03)",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "astro dev",
+    "build": "astro check && astro build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "astro preview",
+    "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.9",
+    "@astrojs/react": "^5.0.6",
+    "@astrojs/sitemap": "^3.7.3",
+    "astro": "^6.4.2",
     "clsx": "^2.1.1",
     "gsap": "^3.15.0",
     "lucide-react": "^1.16.0",
@@ -22,7 +37,8 @@
     "react-icons": "^5.6.0",
     "tailwind-merge": "^3.6.0",
     "three": "^0.184.0",
-    "tweakpane": "^4.0.5"
+    "tweakpane": "^4.0.5",
+    "typescript": "^6.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -33,6 +49,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
-    "vite": "^8.0.12"
+    "vite": "^7.0.0"
   }
 }

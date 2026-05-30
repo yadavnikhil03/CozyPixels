@@ -1,0 +1,23 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../index.css';
+---
+
+<Layout title="Server Error - CozyPixels" description="An internal server error occurred.">
+  <main style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center;">
+    <div style="margin-bottom: 2rem; opacity: 0.8; color: #ba1a1a;">
+      <svg width="150" height="150" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>
+    </div>
+    <h1 class="font-display" style="font-size: 6rem; font-weight: 850; margin-bottom: 1rem; color: #ba1a1a; letter-spacing: -0.06em;">500</h1>
+    <h2 class="font-display" style="font-size: 2rem; font-weight: 700; margin-bottom: 1.5rem; color: #2f365e;">Server Error</h2>
+    <p style="color: #626d86; max-width: 450px; margin: 0 auto 3rem; font-size: 1.1rem; line-height: 1.6;">Oops! Something went wrong on our end. We're looking into it and will have it fixed as soon as possible.</p>
+    
+    <a href="/" class="hero-cta-primary" style="display: inline-flex; align-items: center; justify-content: center;">
+      Return to Homepage
+    </a>
+  </main>
+</Layout>
