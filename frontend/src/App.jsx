@@ -816,18 +816,9 @@ function App() {
             ))}
           </AnimatePresence>
           {filteredWallpapers.length > displayCount && (
-            <div ref={loaderRef} className="loader gallery-loader" style={{ gridColumn: '1 / -1', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div className="gallery-loader-visual" aria-hidden="true">
-                <span className="gallery-loader-tile gallery-loader-tile--a" />
-                <span className="gallery-loader-tile gallery-loader-tile--b" />
-                <span className="gallery-loader-tile gallery-loader-tile--c" />
-                <span className="gallery-loader-tile gallery-loader-tile--d" />
-                <span className="gallery-loader-sweep" />
-              </div>
-              <div className="gallery-loader-copy">
-                <span className="gallery-loader-text">Loading the next wallpapers...</span>
-                <span className="gallery-loader-subtext">Building a fresh batch for the gallery</span>
-              </div>
+            <div ref={loaderRef} className="loader" style={{ gridColumn: '1 / -1', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="material-symbols-outlined spin" style={{ animation: 'spin 1s linear infinite' }}>sync</span>
+              <span style={{ marginLeft: '12px' }}>Loading more wallpapers...</span>
             </div>
           )}
           {filteredWallpapers.length === 0 && (
