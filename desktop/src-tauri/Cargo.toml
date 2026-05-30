@@ -1,6 +1,6 @@
 [package]
 name = "desktop"
-version = "1.0.8"
+version = "1.0.9"
 description = "CozyPixels Desktop - Wallpaper Manager"
 authors = ["Nikhil Yadav <@yadavnikhil03>"]
 edition = "2021"
