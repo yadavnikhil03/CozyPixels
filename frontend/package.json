@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node ../backend/generate.js && node ../backend/generate-sitemap.js && vite build",
+    "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
