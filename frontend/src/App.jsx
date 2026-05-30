@@ -4,6 +4,7 @@ import { LuGithub, LuTwitter, LuGlobe, LuSparkles, LuWind, LuRotateCcw, LuChevro
 import SocialCard from './components/forgeui/social-card';
 import FlipText from './components/forgeui/flip-text';
 import SanctuaryMode from './components/forgeui/sanctuary-mode';
+import FaqSection from './components/FaqSection';
 import './index.css';
 
 const STATIC_URL = import.meta.env.PROD ? 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public' : '';
@@ -827,6 +828,7 @@ function App() {
             </div>
           )}
         </section>
+        <FaqSection />
       </main>
       <Footer />
       <ScrollToTop />
