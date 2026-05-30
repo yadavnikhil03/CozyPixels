@@ -1049,7 +1049,7 @@ export default function App() {
               <p>Failed to load wallpapers</p>
               <button onClick={() => {
                 fetchAbortRef.current?.abort();
-                fetch(`${API_URL}/wallpapers`)
+                fetch(API_URL)
                   .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
                   .then(d => { if (Array.isArray(d)) { setWallpapers(d); setFetchError(false); } })
                   .catch(e => { if (e.name !== 'AbortError') console.error('Retry failed:', e); });
