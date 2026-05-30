@@ -6,7 +6,8 @@ import FlipText from './components/forgeui/flip-text';
 import SanctuaryMode from './components/forgeui/sanctuary-mode';
 import './index.css';
 
-const STATIC_URL = import.meta.env.PROD ? 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public' : (import.meta.env.VITE_STATIC_URL || 'http://localhost:3001');
+const API_URL = import.meta.env.PROD ? (import.meta.env.VITE_API_URL || 'https://cozy-pixels.onrender.com/api') : 'http://localhost:3001/api';
+const STATIC_URL = import.meta.env.PROD ? 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public' : '';
 const imageUrl = (path) => `${STATIC_URL}${path.startsWith('/') ? path : `/${path}`}`;
 
 const promoSectionVariants = {
@@ -710,7 +711,7 @@ function App() {
   };
 
   useEffect(() => {
-    fetch('/wallpapers.json')
+    fetch(`${API_URL}/wallpapers`)
       .then(res => {
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         return res.json();
