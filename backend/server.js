@@ -11,6 +11,10 @@ app.use(express.static(path.join(__dirname, '..', 'frontend', 'public')));
 
 const allWallpapers = require('./wallpapers.json');
 
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', message: 'CozyPixels API is running smoothly on Render!' });
+});
+
 app.get('/wallpapers', (req, res) => {
   res.json(allWallpapers);
 });
