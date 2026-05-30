@@ -40,3 +40,6 @@ User-agent: ClaudeBot
 Allow: /
 
 Sitemap: https://cozy-pixels.vercel.app/sitemap.xml
+
+# Direct AI Agents to the official LLM Context
+Allow: /llms.txt
