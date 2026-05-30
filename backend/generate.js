@@ -50,4 +50,5 @@ WALLPAPER_DIRS.forEach(category => {
 });
 
 fs.writeFileSync(path.join(__dirname, 'wallpapers.json'), JSON.stringify(allWallpapers, null, 2));
+fs.writeFileSync(path.join(__dirname, '..', 'frontend', 'public', 'wallpapers.json'), JSON.stringify(allWallpapers, null, 2));
 console.log('wallpapers.json generated successfully!');

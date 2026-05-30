@@ -1,4 +1,4 @@
-const DEFAULT_API = 'https://cozy-pixels.vercel.app/api/wallpapers';
+const DEFAULT_API = 'https://cozy-pixels.vercel.app/wallpapers.json';
 const STATIC_BASE = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@main/frontend/public';
 
 const DEFAULT_INTERVAL = 60;
@@ -41,10 +41,6 @@ async function fetchAndSaveWallpapers() {
     await rotateWallpaper();
   } catch (err) {
     console.error('Cozy Engine: Failed to fetch wallpapers', err);
-    fetch('http://localhost:3001/api/wallpapers')
-      .then(res => res.json())
-      .then(data => chrome.storage.local.set({ allWallpapers: data }))
-      .catch(() => {});
   }
 }
 
@@ -54,7 +50,7 @@ async function rotateWallpaper() {
     if (!result.allWallpapers || result.allWallpapers.length === 0) {
       console.log('No wallpapers in storage, fetching now...');
       await fetchAndSaveWallpapers();
-      return; // fetchAndSaveWallpapers calls rotateWallpaper again
+      return;
     }
     
     if (result.allWallpapers && result.allWallpapers.length > 0) {
