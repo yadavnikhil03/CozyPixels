@@ -54,7 +54,7 @@ const modalCardVariants = {
 
 const ExtensionModal = ({ onClose, browser }) => {
   const [copied, setCopied] = useState(false);
-  const downloadUrl = 'https://github.com/user-attachments/files/28376068/cozyPixels_extension_v1.0.1.zip';
+  const downloadUrl = 'https://github.com/user-attachments/files/28417336/Cozypixels_extension.zip';
 
   const copyUrl = () => {
     navigator.clipboard.writeText(browser.url);
@@ -698,7 +698,7 @@ function App() {
     const browser = detectBrowser();
     setBrowserInfo(browser);
 
-    const downloadUrl = 'https://github.com/user-attachments/files/28376068/cozyPixels_extension_v1.0.1.zip';
+    const downloadUrl = 'https://github.com/user-attachments/files/28417336/Cozypixels_extension.zip';
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = 'cozy-engine.zip';
