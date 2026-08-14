@@ -144,8 +144,9 @@ async fn set_lock_screen(url: String) -> Result<String, String> {
         use windows::System::UserProfile::LockScreen;
         use windows::core::HSTRING;
         
-        let path_str = if !url.starts_with("http://") && !url.starts_with("https://") {
-            url.clone()
+        let path_str = if !url.starts_with("http") {
+            // It's a local path, convert to backslashes for Windows API
+            url.replace('/', "\\")
         } else {
             let temp_dir = std::env::temp_dir();
             let filename = url.split('/').last().unwrap_or("cozy-lock.jpg").to_string();
@@ -248,30 +249,35 @@ async fn start_auto_rotate(
             let url = current.url.clone();
             let name = current.name.clone();
 
-            let temp_dir = std::env::temp_dir();
-            let filename = url.split('/').last().unwrap_or("wallpaper.jpg").to_string();
-            let temp_path = temp_dir.join(format!("cozypixels_{}", filename));
+            if url.starts_with("http://") || url.starts_with("https://") {
+                let temp_dir = std::env::temp_dir();
+                let filename = url.split('/').last().unwrap_or("wallpaper.jpg").to_string();
+                let temp_path = temp_dir.join(format!("cozypixels_{}", filename));
 
-            if let Ok(entries) = std::fs::read_dir(&temp_dir) {
-                for entry in entries.flatten() {
-                    if let Some(name) = entry.file_name().to_str() {
-                        if name.starts_with("cozypixels_")
-                            && name != format!("cozypixels_{}", filename).as_str()
-                        {
-                            let _ = std::fs::remove_file(entry.path());
+                if let Ok(entries) = std::fs::read_dir(&temp_dir) {
+                    for entry in entries.flatten() {
+                        if let Some(name) = entry.file_name().to_str() {
+                            if name.starts_with("cozypixels_")
+                                && name != format!("cozypixels_{}", filename).as_str()
+                            {
+                                let _ = std::fs::remove_file(entry.path());
+                            }
                         }
                     }
                 }
-            }
 
-            if let Ok(response) = reqwest::blocking::get(&url) {
-                if let Ok(bytes) = response.bytes() {
-                    let _ = std::fs::write(&temp_path, &bytes);
-                    if let Some(path_str) = temp_path.to_str() {
-                        let _ = set_wallpaper_os(path_str);
-                        let _ = window.emit("wallpaper-changed", &name);
+                if let Ok(response) = reqwest::blocking::get(&url) {
+                    if let Ok(bytes) = response.bytes() {
+                        let _ = std::fs::write(&temp_path, &bytes);
+                        if let Some(path_str) = temp_path.to_str() {
+                            let _ = set_wallpaper_os(path_str);
+                            let _ = window.emit("wallpaper-changed", &name);
+                        }
                     }
                 }
+            } else {
+                let _ = set_wallpaper_os(&url);
+                let _ = window.emit("wallpaper-changed", &name);
             }
         }
     });
@@ -395,9 +401,11 @@ pub fn run() {
             let normalized = std::path::Path::new(&local_path)
                 .components()
                 .collect::<std::path::PathBuf>();
-            let normalized_str = normalized.to_string_lossy().to_string();
+            
+            let normalized_str = normalized.to_string_lossy().replace('\\', "/");
+            let check_path = local_path.replace('\\', "/");
 
-            if local_path != normalized_str {
+            if check_path != normalized_str {
                 return tauri::http::Response::builder()
                     .status(400)
                     .body(Vec::new())

@@ -23,13 +23,13 @@ const SplashScreen = ({ visible }) => {
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div
-          className="splash"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.45, ease: [0.4, 0, 1, 1] }}
-        >
-          <div className="splash__bg" />
+        <motion.div className="splash">
+          <motion.div 
+            className="splash__bg" 
+            initial={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            transition={{ duration: 0.5 }} 
+          />
 
           <div className="splash__content">
             <motion.div
@@ -38,7 +38,7 @@ const SplashScreen = ({ visible }) => {
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             >
-              <svg className="splash__ring" viewBox="0 0 96 96" fill="none">
+              <motion.svg className="splash__ring" viewBox="0 0 96 96" fill="none" exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.3 } }}>
                 <circle
                   ref={circleRef}
                   cx="48" cy="48" r="44"
@@ -55,9 +55,10 @@ const SplashScreen = ({ visible }) => {
                     <stop offset="100%" stopColor="#5E5CE6" />
                   </linearGradient>
                 </defs>
-              </svg>
+              </motion.svg>
               <motion.div
                 className="splash__icon"
+                layoutId="app-logo-icon"
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -68,6 +69,7 @@ const SplashScreen = ({ visible }) => {
 
             <motion.h1
               className="splash__title"
+              layoutId="app-logo-text"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -79,6 +81,7 @@ const SplashScreen = ({ visible }) => {
               className="splash__bar-track"
               initial={{ opacity: 0, scaleX: 0.3 }}
               animate={{ opacity: 1, scaleX: 1 }}
+              exit={{ opacity: 0, transition: { duration: 0.2 } }}
               transition={{ delay: 0.6, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className="splash__bar-fill" />
@@ -363,7 +366,7 @@ const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, onDownl
     if (!wallpaper) return;
     const baseImageUrl = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') ? wallpaper.path : `${STATIC_URL}${wallpaper.path}`;
     
-    if (wallpaper.path.startsWith('http')) {
+    if (wallpaper.path.startsWith('http') && !wallpaper.realPath) {
       invoke('fetch_image_bytes', { url: wallpaper.path })
         .then(bytes => {
           if (!isMounted) return;
@@ -456,6 +459,8 @@ export default function App() {
   const [wallpapers, setWallpapers] = useState([]);
   const [localFolders, setLocalFolders] = useState(() => JSON.parse(localStorage.getItem('cozy_localFolders') || '[]'));
   const [customWallpapers, setCustomWallpapers] = useState([]);
+  const allWallpapers = useMemo(() => [...customWallpapers, ...wallpapers], [customWallpapers, wallpapers]);
+  const categories = useMemo(() => [...new Set(allWallpapers.map(w => w.category))], [allWallpapers]);
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
   const [fetchError, setFetchError] = useState(false);
@@ -577,7 +582,7 @@ export default function App() {
               if (cancelled) return;
               arr.push(...paths.map(p => {
                  const pClean = p.replace(/\\/g, '/');
-                 const localUrl = convertFileSrc(pClean);
+                 const localUrl = convertFileSrc(pClean, 'cozy');
                  return {
                    name: pClean.split('/').pop(),
                    path: localUrl,
@@ -694,10 +699,10 @@ export default function App() {
       manualRotateRef.current = false;
       return;
     }
-    if (autoRotate && wallpapers.length > 0 && !rotateStatus) {
-      const pool = wallpapers
+    if (autoRotate && allWallpapers.length > 0 && !rotateStatus) {
+      const pool = allWallpapers
         .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: `${STATIC_URL}${w.path}` }));
+        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('cozy://') ? w.path : `${STATIC_URL}${w.path}`) }));
       if (pool.length) {
         let startIndex = 0;
         let initialDelayMs = rotateInterval;
@@ -727,7 +732,7 @@ export default function App() {
           .catch(() => setAutoRotate(false));
       }
     }
-  }, [wallpapers, autoRotate, rotateCategory, rotateInterval, rotateStatus, addToast]);
+  }, [allWallpapers, autoRotate, rotateCategory, rotateInterval, rotateStatus, addToast]);
 
   useEffect(() => {
     const u = listen('wallpaper-changed', e => {
@@ -838,9 +843,9 @@ export default function App() {
     } else {
       manualRotateRef.current = true;
       setAutoRotate(true);
-      const pool = wallpapers
+      const pool = allWallpapers
         .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: `${STATIC_URL}${w.path}` }));
+        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('cozy://') ? w.path : `${STATIC_URL}${w.path}`) }));
       if (!pool.length) { addToast('No wallpapers in this category', 'error'); return; }
       try {
         await invoke('start_auto_rotate', { 
@@ -857,10 +862,9 @@ export default function App() {
         setAutoRotate(false);
       }
     }
-  }, [autoRotate, wallpapers, rotateInterval, rotateCategory, addToast]);
+  }, [autoRotate, allWallpapers, rotateInterval, rotateCategory, addToast]);
 
-  const allWallpapers = useMemo(() => [...customWallpapers, ...wallpapers], [customWallpapers, wallpapers]);
-  const categories = useMemo(() => [...new Set(allWallpapers.map(w => w.category))], [allWallpapers]);
+  // allWallpapers and categories moved up
 
   const filtered = useMemo(() => {
     return allWallpapers
@@ -894,8 +898,14 @@ export default function App() {
       <SplashScreen visible={showSplash} />
       <aside className="sidebar">
         <div className="logo">
-          <LuSparkles size={18} />
-          <span>CozyPixels</span>
+          {!showSplash && (
+            <>
+              <motion.div layoutId="app-logo-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <LuSparkles size={18} />
+              </motion.div>
+              <motion.span layoutId="app-logo-text">CozyPixels</motion.span>
+            </>
+          )}
         </div>
 
         <nav className="nav">
