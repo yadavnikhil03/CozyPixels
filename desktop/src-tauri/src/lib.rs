@@ -469,7 +469,7 @@ pub fn run() {
             let toggle_i = MenuItem::with_id(app, "toggle_rotate", "Toggle Auto-Rotate", true, None::<&str>)?;
             let menu = Menu::with_items(app, &[&show_i, &next_i, &toggle_i, &quit_i])?;
 
-            let _tray = TrayIconBuilder::new()
+            let _tray = TrayIconBuilder::with_id("main")
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "quit" => {

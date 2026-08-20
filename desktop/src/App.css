@@ -617,6 +617,10 @@ body {
 
 .card__btn--set { background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
 .card__btn--set:hover { background: var(--md-sys-color-primary); filter: brightness(1.1); }
+.active-star { background: #ffd700; color: #000; }
+.active-star:hover { background: #ffea00; }
+.card__btn--danger { background: var(--md-sys-color-error); color: var(--md-sys-color-on-error); }
+.card__btn--danger:hover { background: var(--md-sys-color-error); filter: brightness(1.1); }
 
 .card__error {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1413,4 +1417,66 @@ body {
 
 @media (forced-colors: active) {
   .card__btn, .lb-btn, .update-btn, .nav__item { border: 1px solid ButtonText; }
+}
+
+/* Selection Mode */
+.card.selection-mode {
+  cursor: pointer;
+}
+.card.selection-mode:hover {
+  transform: scale(0.98);
+}
+.card.selected {
+  outline: 3px solid var(--md-sys-color-primary);
+  transform: scale(0.96);
+}
+.card.selected:hover {
+  transform: scale(0.96);
+}
+
+.card__checkbox {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0,0,0,0.5);
+  border-radius: 4px;
+  border: 2px solid rgba(255,255,255,0.7);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.checkbox__inner.checked {
+  width: 14px;
+  height: 14px;
+  background: var(--md-sys-color-primary);
+  border-radius: 2px;
+}
+
+.topbar__btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.1);
+  border: none;
+  color: var(--md-sys-color-on-surface);
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.topbar__btn:hover {
+  background: rgba(255,255,255,0.2);
+}
+.topbar__btn--danger {
+  background: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+}
+.topbar__btn--danger:hover {
+  background: var(--md-sys-color-error);
+  filter: brightness(1.1);
 }
