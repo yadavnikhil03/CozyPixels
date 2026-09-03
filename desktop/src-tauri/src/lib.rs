@@ -388,7 +388,7 @@ async fn get_cached_image(app: tauri::AppHandle, url: String) -> Result<String, 
     let file_path = cache_file_path(&cache_dir, &url);
     
     if file_path.exists() {
-        return Ok(format!("cozy://localhost/{}", file_path.to_string_lossy().replace('\\', "/")));
+        return Ok(format!("asset://localhost/{}", file_path.to_string_lossy().replace('\\', "/")));
     }
     
     Ok(url)
@@ -495,6 +495,7 @@ async fn set_video_wallpaper(
     {
         use winapi::shared::windef::RECT;
         use winapi::um::winuser::{
+            GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
             GetClientRect, SetParent, SetWindowLongW, SetWindowPos,
             GWL_STYLE, SWP_NOACTIVATE, SWP_NOZORDER, SWP_SHOWWINDOW,
             WS_CHILD, WS_CLIPCHILDREN, WS_CLIPSIBLINGS, WS_VISIBLE,
@@ -528,15 +529,40 @@ async fn set_video_wallpaper(
 
         let hwnd = window.hwnd().map_err(|e| e.to_string())?;
         let hwnd_ptr: HWND = unsafe { std::mem::transmute(hwnd) };
-        let mut client_rect: RECT = unsafe { std::mem::zeroed() };
-        if unsafe { GetClientRect(worker_w, &mut client_rect) } == 0 {
-            return Err("Could not determine the desktop host bounds".to_string());
+        
+        let mut min_x = 0;
+        let mut min_y = 0;
+        let mut max_x = 0;
+        let mut max_y = 0;
+        
+        if let Ok(monitors) = window.available_monitors() {
+            for (i, monitor) in monitors.iter().enumerate() {
+                let pos = monitor.position();
+                let size = monitor.size();
+                let right = pos.x as i32 + size.width as i32;
+                let bottom = pos.y as i32 + size.height as i32;
+                
+                if i == 0 {
+                    min_x = pos.x as i32;
+                    min_y = pos.y as i32;
+                    max_x = right;
+                    max_y = bottom;
+                } else {
+                    min_x = min_x.min(pos.x as i32);
+                    min_y = min_y.min(pos.y as i32);
+                    max_x = max_x.max(right);
+                    max_y = max_y.max(bottom);
+                }
+            }
         }
-        let width = client_rect.right - client_rect.left;
-        let height = client_rect.bottom - client_rect.top;
-        if width <= 0 || height <= 0 {
-            return Err("Could not determine the desktop size".to_string());
-        }
+        
+        let mut width = if max_x > min_x { max_x - min_x } else { 1920 };
+        let mut height = if max_y > min_y { max_y - min_y } else { 1080 };
+        let x = min_x;
+        let y = min_y;
+        
+        let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize { width: width as u32, height: height as u32 }));
+        let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
 
         unsafe {
             SetParent(hwnd_ptr, worker_w);
@@ -545,14 +571,15 @@ async fn set_video_wallpaper(
                 GWL_STYLE,
                 (WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE) as i32,
             );
+            use winapi::um::winuser::{SWP_NOMOVE, SWP_NOSIZE};
             SetWindowPos(
                 hwnd_ptr,
                 null_mut(),
                 0,
                 0,
-                width,
-                height,
-                SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW,
             );
         }
     }
@@ -563,6 +590,12 @@ async fn set_video_wallpaper(
         return Err("Video wallpapers are currently only supported on Windows.".to_string());
     }
     
+    Ok(())
+}
+
+#[tauri::command]
+async fn copy_local_wallpaper(source: String, dest: String) -> Result<(), String> {
+    std::fs::copy(&source, &dest).map_err(|e| format!("Failed to copy file: {}", e))?;
     Ok(())
 }
 
@@ -581,92 +614,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::Builder::new().build())
-        .plugin(tauri_plugin_opener::init())
-        .register_uri_scheme_protocol("cozy", |_app, request| {
-            let path = request.uri().path().strip_prefix('/').unwrap_or(request.uri().path());
-            let decoded = percent_encoding::percent_decode_str(path).decode_utf8_lossy().to_string();
-            let local_path = if cfg!(windows) && decoded.starts_with('/') {
-                decoded[1..].to_string()
-            } else {
-                decoded
-            };
-
-            // Security: normalize path to prevent directory traversal
-            let normalized = std::path::Path::new(&local_path)
-                .components()
-                .collect::<std::path::PathBuf>();
-            
-            let normalized_str = normalized.to_string_lossy().replace('\\', "/");
-            let check_path = local_path.replace('\\', "/");
-
-            if check_path != normalized_str {
-                return tauri::http::Response::builder()
-                    .status(400)
-                    .body(Vec::new())
-                    .unwrap();
-            }
-
-            let lower_path = local_path.to_lowercase();
-            let is_valid_image = lower_path.ends_with(".png")
-                || lower_path.ends_with(".jpg")
-                || lower_path.ends_with(".jpeg")
-                || lower_path.ends_with(".gif")
-                || lower_path.ends_with(".webp")
-                || lower_path.ends_with(".bmp")
-                || lower_path.ends_with(".mp4")
-                || lower_path.ends_with(".webm")
-                || lower_path.ends_with(".mkv");
-
-            if !is_valid_image {
-                return tauri::http::Response::builder()
-                    .status(403)
-                    .body(Vec::new())
-                    .unwrap();
-            }
-
-            if let Ok(metadata) = std::fs::metadata(&local_path) {
-                // Increase limit to 2GB for videos
-                let limit = if lower_path.ends_with(".mp4") || lower_path.ends_with(".webm") || lower_path.ends_with(".mkv") {
-                    2000 * 1024 * 1024 
-                } else {
-                    50 * 1024 * 1024
-                };
-                if metadata.len() > limit {
-                    return tauri::http::Response::builder()
-                        .status(413)
-                        .body(Vec::new())
-                        .unwrap();
-                }
-            }
-
-            if let Ok(data) = std::fs::read(&local_path) {
-                let mime = if lower_path.ends_with(".png") {
-                    "image/png"
-                } else if lower_path.ends_with(".gif") {
-                    "image/gif"
-                } else if lower_path.ends_with(".webp") {
-                    "image/webp"
-                } else if lower_path.ends_with(".mp4") {
-                    "video/mp4"
-                } else if lower_path.ends_with(".webm") {
-                    "video/webm"
-                } else if lower_path.ends_with(".mkv") {
-                    "video/x-matroska"
-                } else {
-                    "image/jpeg"
-                };
-
-                tauri::http::Response::builder()
-                    .header("Content-Type", mime)
-                    .body(data)
-                    .unwrap()
-            } else {
-                tauri::http::Response::builder()
-                    .status(404)
-                    .body(Vec::new())
-                    .unwrap()
-            }
-        })
+        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show CozyPixels", true, None::<&str>)?;
@@ -725,6 +673,7 @@ pub fn run() {
             read_file_bytes,
             delete_local_wallpaper,
             download_and_save_wallpaper,
+            copy_local_wallpaper,
             get_cached_image,
             delete_cached_wallpaper,
             set_video_wallpaper,

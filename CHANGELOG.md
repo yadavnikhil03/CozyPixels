@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.5.0] - 2026-09-04
+
+### Improved
+
+- **Complete Architectural Redesign:** Upgraded application architecture by replacing custom unstable protocols with robust native Tauri `asset://` protocol endpoints.
+- **Glassmorphism UI Overhaul:** Rebuilt the entire user interface to feature a premium, dynamic glassmorphic design system with modern typography and sleek micro-animations.
+- **Testing Infrastructure:** Integrated headless Vitest and JSDOM testing environments for isolated frontend validation.
+- **Seamless Desktop Integration:** Rewrote the Windows background rendering engine to tap into native Tauri monitor bounds to completely eradicate scaling mismatch gaps.
+
+### Fixed
+
+- **Animated Wallpaper Engine:** Fixed an issue where GIF wallpapers froze on the desktop. Animated GIFs are now piped directly into the live background engine.
+- **Video Wallpapers Working Flawlessly:** Resolved all edge-clipping and gap issues with video wallpapers by correctly processing multi-monitor physical bounds across all DPI scaling levels.
+- **Category Auto-Rotate State:** Fixed a backend synchronization bug that caused auto-rotation to fail when switching wallpaper categories.
+
 ## [1.4.0] - 2026-08-26
 
 ### Improved

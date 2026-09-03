@@ -1,0 +1,96 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+body {
+  font-family: 'Outfit', sans-serif !important;
+}
+
+.sidebar {
+  background: rgba(255, 255, 255, 0.05) !important;
+  backdrop-filter: blur(20px) saturate(180%);
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .sidebar {
+  background: rgba(17, 17, 27, 0.6) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nav__item {
+  border-radius: 12px !important;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1) !important;
+  margin-bottom: 2px;
+}
+
+.nav__item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  transform: translateX(4px);
+}
+
+.nav__item.active {
+  background: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-on-primary) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.nav__item.active .nav__badge {
+  background: rgba(255,255,255,0.2) !important;
+  color: white !important;
+}
+
+.gallery {
+  padding: 24px 32px 48px !important;
+  gap: 24px !important;
+}
+
+.card {
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1) !important;
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.02) !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3) !important;
+}
+
+.card__overlay {
+  background: linear-gradient(to top, rgba(0,0,0, 0.9) 0%, rgba(0,0,0, 0.1) 60%, transparent 100%) !important;
+}
+
+.card__name {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.5px;
+}
+
+.search__input {
+  border-radius: 16px !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+[data-theme="dark"] .search__input {
+  background: rgba(0, 0, 0, 0.2) !important;
+}
+
+.search__input:focus {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: var(--md-sys-color-primary);
+}
+
+[data-theme="dark"] .search__input:focus {
+  background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.topbar {
+  background: transparent !important;
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logo {
+  font-size: 22px !important;
+  letter-spacing: -0.5px;
+}

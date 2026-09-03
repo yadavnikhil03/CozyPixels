@@ -22,16 +22,26 @@ export const VideoBackgroundPlayer = ({ initialUrl }) => {
 
   if (!videoUrl) return null;
 
+  const isGif = videoUrl.toLowerCase().endsWith('.gif');
+
   return (
-    <div style={{ position: 'fixed', inset: 0, width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: 'black', margin: 0 }}>
-      <video 
-        src={videoUrl} 
-        autoPlay 
-        loop 
-        muted 
-        playsInline 
-        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0 }}
-      />
+    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', backgroundColor: 'black', margin: 0 }}>
+      {isGif ? (
+        <img 
+          src={videoUrl} 
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0 }} 
+          alt="GIF Wallpaper" 
+        />
+      ) : (
+        <video 
+          src={videoUrl} 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0 }}
+        />
+      )}
     </div>
   );
 };

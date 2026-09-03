@@ -10,7 +10,7 @@ export const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview,
   const [error, setError] = useState(false);
   const [imageFallback, setImageFallback] = useState(false);
   const baseImageUrl = useMemo(() => 
-    wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
+    wallpaper.path.startsWith('http') || wallpaper.path.startsWith('asset://') 
       ? wallpaper.path 
       : `${STATIC_URL}${wallpaper.path}`,
     [wallpaper.path]
@@ -118,7 +118,7 @@ export const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview,
               >
                 <LuTrash size={15} />
               </button>
-            ) : cachedImageUrl && cachedImageUrl.startsWith('cozy://') ? (
+            ) : cachedImageUrl && cachedImageUrl.startsWith('asset://') ? (
               <button
                 className="card__btn card__btn--danger"
                 onClick={e => { e.stopPropagation(); onDelete && onDelete(wallpaper, true); }}

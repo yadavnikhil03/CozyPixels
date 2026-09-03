@@ -26,7 +26,7 @@ export function useCachedImage(url) {
 
     invoke('get_cached_image', { url })
       .then(cachedUrl => {
-        if (isMounted && cachedUrl?.startsWith('cozy://localhost/')) {
+        if (isMounted && cachedUrl?.startsWith('asset://localhost/')) {
           setSrc(cachedUrl);
         }
       })

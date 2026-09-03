@@ -15,6 +15,7 @@ import {
   LuFolderPlus, LuTriangleAlert, LuStar, LuMousePointerClick
 } from 'react-icons/lu';
 import './App.css?v=2';
+import './premium.css';
 import { SplashScreen } from './components/SplashScreen.jsx';
 import { Toast } from './components/Toast.jsx';
 import { WallpaperCard } from './components/WallpaperCard.jsx';
@@ -150,11 +151,12 @@ export default function App() {
 
   useEffect(() => {
     setDisplayCount(48);
-    galleryRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+    galleryRef.current?.scrollTo?.({ top: 0, behavior: 'auto' });
   }, [category, deferredSearch]);
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const mediaQuery = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mediaQuery) return;
     const handleChange = (e) => setDark(e.matches);
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
@@ -235,7 +237,7 @@ export default function App() {
              const folder = localFolders[i];
              arr.push(...res.value.map(p => {
                const pClean = p.replace(/\\/g, '/');
-               const localUrl = convertFileSrc(pClean, 'cozy');
+               const localUrl = convertFileSrc(pClean);
                return {
                  name: pClean.split('/').pop(),
                  path: localUrl,
@@ -352,6 +354,25 @@ export default function App() {
   }, [rotateInterval, rotateStatus, autoRotate]);
 
   useEffect(() => {
+    if (autoRotate && rotateStatus) {
+      const pool = allWallpapers
+        .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
+        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
+      
+      if (pool.length > 0) {
+        invoke('start_auto_rotate', { 
+          intervalMs: rotateInterval, 
+          wallpapers: pool,
+          startIndex: 0,
+          initialDelayMs: rotateInterval
+        }).catch(err => console.error(err));
+      } else {
+        invoke('stop_auto_rotate').catch(err => console.error(err));
+      }
+    }
+  }, [rotateCategory, allWallpapers]);
+
+  useEffect(() => {
     if (manualRotateRef.current) {
       manualRotateRef.current = false;
       return;
@@ -359,7 +380,7 @@ export default function App() {
     if (autoRotate && categoryCounts.All > 0 && !rotateStatus) {
       const pool = allWallpapers
         .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('cozy://') ? w.path : `${STATIC_URL}${w.path}`) }));
+        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
       if (pool.length) {
         let startIndex = 0;
         let initialDelayMs = rotateInterval;
@@ -405,20 +426,20 @@ export default function App() {
       addToast('Wallpaper is unavailable', 'error');
       return false;
     }
-    const url = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
+    const url = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('asset://') 
        ? wallpaper.path 
        : `${STATIC_URL}${wallpaper.path}`;
        
-    const rustUrl = wallpaper.realPath || (url.startsWith('cozy://localhost/') ? url.replace('cozy://localhost/', '') : url);
+    const rustUrl = wallpaper.realPath || (url.startsWith('asset://localhost/') ? url.replace('asset://localhost/', '') : url);
        
-    const isVideo = wallpaper.path.toLowerCase().endsWith('.mp4') || wallpaper.path.toLowerCase().endsWith('.webm') || wallpaper.path.toLowerCase().endsWith('.mkv');
+    const isAnimatedDesktop = wallpaper.path.toLowerCase().endsWith('.mp4') || wallpaper.path.toLowerCase().endsWith('.webm') || wallpaper.path.toLowerCase().endsWith('.mkv') || wallpaper.path.toLowerCase().endsWith('.gif');
        
     setSettingWallpaper(wallpaper.path);
     try {
-      if (isVideo) {
+      if (isAnimatedDesktop) {
         const playerUrl = rustUrl.startsWith('http://') || rustUrl.startsWith('https://')
           ? rustUrl
-          : convertFileSrc(rustUrl, 'cozy');
+          : convertFileSrc(rustUrl);
         await invoke('set_video_wallpaper', { url: rustUrl, playerUrl });
       } else {
         await invoke('set_wallpaper', { url: rustUrl });
@@ -438,11 +459,11 @@ export default function App() {
       addToast('Wallpaper is unavailable', 'error');
       return false;
     }
-    const url = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
+    const url = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('asset://') 
        ? wallpaper.path 
        : `${STATIC_URL}${wallpaper.path}`;
        
-    const rustUrl = wallpaper.realPath || (url.startsWith('cozy://localhost/') ? url.replace('cozy://localhost/', '') : url);
+    const rustUrl = wallpaper.realPath || (url.startsWith('asset://localhost/') ? url.replace('asset://localhost/', '') : url);
 
     setSettingLockScreen(wallpaper.path);
     try {
@@ -462,7 +483,7 @@ export default function App() {
       addToast('Wallpaper is unavailable', 'error');
       return;
     }
-    const url = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://') 
+    const url = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('asset://') 
       ? wallpaper.path 
       : `${STATIC_URL}${wallpaper.path}`;
       let filename = wallpaper.name || 'wallpaper';
@@ -503,7 +524,7 @@ export default function App() {
       addToast('Downloading wallpaper...', 'info');
 
       if (wallpaper.realPath) {
-        let bytes = await invoke('read_file_bytes', { path: wallpaper.realPath });
+        await invoke('copy_local_wallpaper', { source: wallpaper.realPath, dest: filePath });
       } else {
         await invoke('download_and_save_wallpaper', { url, path: filePath });
       }
@@ -526,7 +547,7 @@ export default function App() {
       setAutoRotate(true);
       const pool = allWallpapers
         .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('cozy://') ? w.path : `${STATIC_URL}${w.path}`) }));
+        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
       if (!pool.length) { addToast('No wallpapers in this category', 'error'); return; }
       try {
         await invoke('start_auto_rotate', { 
@@ -606,7 +627,7 @@ export default function App() {
       );
       if (confirmed) {
         if (isCache) {
-          const cacheUrl = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('cozy://')
+          const cacheUrl = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('asset://')
             ? wallpaper.path
             : `${STATIC_URL}${wallpaper.path}`;
           await invoke('delete_cached_wallpaper', { url: cacheUrl });
@@ -644,7 +665,7 @@ export default function App() {
     if (autoRotate && customWallpapers.length < prevCustomWallpapersLength.current) {
       const pool = allWallpapers
         .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('cozy://') ? w.path : `${STATIC_URL}${w.path}`) }));
+        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
       
       if (pool.length > 0) {
         invoke('start_auto_rotate', { 

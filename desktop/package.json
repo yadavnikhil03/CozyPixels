@@ -1,7 +1,7 @@
 {
   "name": "cozypixels-desktop",
   "private": true,
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "CozyPixels Desktop App - A curated collection of minimalist, serene, and high-resolution wallpapers featuring Catppuccin and Nord.",
   "keywords": [
     "cozypixels",
@@ -20,12 +20,14 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "test": "vitest run",
     "tauri": "tauri"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-autostart": "^2.5.1",
     "@tauri-apps/plugin-dialog": "^2.7.2",
+    "@tauri-apps/plugin-fs": "^2.5.2",
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-updater": "^2.10.1",
@@ -36,7 +38,11 @@
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.11.4",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@vitejs/plugin-react": "^6.1.0",
-    "vite": "^8.2.2"
+    "jsdom": "^30.0.1",
+    "vite": "^8.2.2",
+    "vitest": "^5.0.0"
   }
 }
