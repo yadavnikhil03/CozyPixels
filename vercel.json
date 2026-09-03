@@ -3,7 +3,7 @@
     "frontend": {
       "root": "frontend",
       "routePrefix": "/",
-      "framework": "vite"
+      "framework": "astro"
     },
     "backend": {
       "root": "backend",
