@@ -4,6 +4,23 @@ import { listen } from '@tauri-apps/api/event';
 export const VideoBackgroundPlayer = ({ initialUrl }) => {
   const [videoUrl, setVideoUrl] = React.useState(initialUrl);
 
+  // Force the html/body to be edge-to-edge with no margins or background color
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      html, body, #root {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        background: black !important;
+        width: 100% !important;
+        height: 100% !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
+
   useEffect(() => {
     let unlisten;
     const setupListener = async () => {
@@ -29,7 +46,7 @@ export const VideoBackgroundPlayer = ({ initialUrl }) => {
       {isGif ? (
         <img 
           src={videoUrl} 
-          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0 }} 
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }} 
           alt="GIF Wallpaper" 
         />
       ) : (
@@ -39,7 +56,7 @@ export const VideoBackgroundPlayer = ({ initialUrl }) => {
           loop 
           muted 
           playsInline 
-          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0 }}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
         />
       )}
     </div>

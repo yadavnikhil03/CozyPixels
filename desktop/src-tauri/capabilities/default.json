@@ -10,7 +10,11 @@
     "fs:default",
     {
       "identifier": "fs:allow-read",
-      "allow": [{ "path": "**" }]
+      "allow": [
+        { "path": "$APP_CACHE/**" },
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$PICTURES/**" }
+      ]
     }
   ]
 }

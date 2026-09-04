@@ -22,6 +22,7 @@ fn http_client() -> &'static reqwest::Client {
 
 static ROTATE_RUNNING: AtomicBool = AtomicBool::new(false);
 static ROTATE_INTERVAL: AtomicU64 = AtomicU64::new(900000);
+static ROTATE_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct WallpaperInfo {
@@ -113,9 +114,10 @@ fn set_wallpaper_os(path: &str) -> Result<(), String> {
 
     #[cfg(target_os = "macos")]
     {
+        let escaped_path = path.replace("\"", "\\\"");
         let script = format!(
             r#"tell application "System Events" to set picture of every desktop to POSIX file "{}""#,
-            path
+            escaped_path
         );
         let status = std::process::Command::new("osascript")
             .arg("-e")
@@ -131,12 +133,22 @@ fn set_wallpaper_os(path: &str) -> Result<(), String> {
 
     #[cfg(target_os = "linux")]
     {
+        let escaped_path = path.replace("'", "'\\''");
         let gnome = std::process::Command::new("gsettings")
             .args(&[
                 "set",
                 "org.gnome.desktop.background",
                 "picture-uri",
-                &format!("file://{}", path),
+                &format!("'file://{}'", escaped_path),
+            ])
+            .status();
+
+        let _ = std::process::Command::new("gsettings")
+            .args(&[
+                "set",
+                "org.gnome.desktop.background",
+                "picture-uri-dark",
+                &format!("'file://{}'", escaped_path),
             ])
             .status();
 
@@ -213,8 +225,7 @@ async fn start_auto_rotate(
         return Err("No wallpapers provided".to_string());
     }
 
-    ROTATE_RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
-    tokio::time::sleep(Duration::from_millis(100)).await;
+    let generation = ROTATE_GENERATION.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
     ROTATE_RUNNING.store(true, std::sync::atomic::Ordering::SeqCst);
 
     let wallpapers = Arc::new(wallpapers);
@@ -225,7 +236,7 @@ async fn start_auto_rotate(
     tauri::async_runtime::spawn(async move {
         let mut first_run = true;
         loop {
-            if !ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) {
+            if !ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) || ROTATE_GENERATION.load(std::sync::atomic::Ordering::SeqCst) != generation {
                 break;
             }
 
@@ -241,7 +252,7 @@ async fn start_auto_rotate(
                 if elapsed >= target_duration {
                     break;
                 }
-                if !ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) {
+                if !ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) || ROTATE_GENERATION.load(std::sync::atomic::Ordering::SeqCst) != generation {
                     break;
                 }
                 tokio::time::sleep(Duration::from_millis(500)).await;
@@ -249,7 +260,7 @@ async fn start_auto_rotate(
             
             first_run = false;
 
-            if !ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) {
+            if !ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) || ROTATE_GENERATION.load(std::sync::atomic::Ordering::SeqCst) != generation {
                 break;
             }
 
@@ -338,12 +349,12 @@ use tauri::{
 
 #[tauri::command]
 async fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
-    std::fs::read(&path).map_err(|e| format!("Failed to read file: {}", e))
+    tokio::fs::read(&path).await.map_err(|e| format!("Failed to read file: {}", e))
 }
 
 #[tauri::command]
 async fn delete_local_wallpaper(path: String) -> Result<(), String> {
-    std::fs::remove_file(&path).map_err(|e| format!("Failed to delete file: {}", e))
+    tokio::fs::remove_file(&path).await.map_err(|e| format!("Failed to delete file: {}", e))
 }
 
 #[tauri::command]
@@ -355,7 +366,7 @@ async fn download_and_save_wallpaper(url: String, path: String) -> Result<(), St
         .await
         .map_err(|e| format!("Failed to read bytes: {}", e))?
         .to_vec();
-    std::fs::write(&path, bytes).map_err(|e| format!("Failed to write file: {}", e))
+    tokio::fs::write(&path, bytes).await.map_err(|e| format!("Failed to write file: {}", e))
 }
 
 fn get_cache_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
@@ -493,49 +504,33 @@ async fn set_video_wallpaper(
 ) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        use winapi::shared::windef::RECT;
         use winapi::um::winuser::{
-            GetSystemMetrics, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN, SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN,
-            GetClientRect, SetParent, SetWindowLongW, SetWindowPos,
-            GWL_STYLE, SWP_NOACTIVATE, SWP_NOZORDER, SWP_SHOWWINDOW,
+            SetParent, SetWindowLongW, SetWindowPos,
+            GWL_STYLE, SWP_NOACTIVATE, SWP_NOZORDER, SWP_SHOWWINDOW, SWP_NOMOVE, SWP_NOSIZE,
             WS_CHILD, WS_CLIPCHILDREN, WS_CLIPSIBLINGS, WS_VISIBLE,
         };
         let window_label = "video_bg";
         let video_url = player_url.unwrap_or_else(|| url.clone());
-        let window = if let Some(w) = app.get_webview_window(window_label) {
-            w
-        } else {
-            let encoded_url: String = url::form_urlencoded::byte_serialize(video_url.as_bytes()).collect();
-            tauri::WebviewWindowBuilder::new(
-                &app,
-                window_label,
-                tauri::WebviewUrl::App(format!("/?videoUrl={}", encoded_url).parse().unwrap())
-            )
-            .title("CozyPixels Video Wallpaper")
-            .decorations(false)
-            .transparent(true)
-            .skip_taskbar(true)
-            .visible(false)
-            .build()
-            .map_err(|e| e.to_string())?
-        };
-
-        let _ = window.emit("change-video", &video_url);
-
+        
+        // Always close existing window and recreate fresh to avoid stale state
+        if let Some(old) = app.get_webview_window(window_label) {
+            let _ = old.close();
+            // Small delay to ensure window is fully destroyed
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        }
+        
         let worker_w = get_workerw();
         if worker_w == null_mut() {
             return Err("Could not find the Windows desktop host window".to_string());
         }
-
-        let hwnd = window.hwnd().map_err(|e| e.to_string())?;
-        let hwnd_ptr: HWND = unsafe { std::mem::transmute(hwnd) };
         
+        // Calculate the exact physical bounding box of all monitors
         let mut min_x = 0;
         let mut min_y = 0;
         let mut max_x = 0;
         let mut max_y = 0;
         
-        if let Ok(monitors) = window.available_monitors() {
+        if let Ok(monitors) = app.app_handle().available_monitors() {
             for (i, monitor) in monitors.iter().enumerate() {
                 let pos = monitor.position();
                 let size = monitor.size();
@@ -556,30 +551,63 @@ async fn set_video_wallpaper(
             }
         }
         
-        let mut width = if max_x > min_x { max_x - min_x } else { 1920 };
-        let mut height = if max_y > min_y { max_y - min_y } else { 1080 };
-        let x = min_x;
-        let y = min_y;
-        
-        let _ = window.set_size(tauri::Size::Physical(tauri::PhysicalSize { width: width as u32, height: height as u32 }));
-        let _ = window.set_position(tauri::Position::Physical(tauri::PhysicalPosition { x, y }));
+        let width = if max_x > min_x { max_x - min_x } else { 1920 };
+        let height = if max_y > min_y { max_y - min_y } else { 1080 };
+
+        // Create window
+        let encoded_url: String = url::form_urlencoded::byte_serialize(video_url.as_bytes()).collect();
+        let window = tauri::WebviewWindowBuilder::new(
+            &app,
+            window_label,
+            tauri::WebviewUrl::App(format!("/?videoUrl={}", encoded_url).parse().unwrap())
+        )
+        .title("CozyPixels Video Wallpaper")
+        .decorations(false)
+        .skip_taskbar(true)
+        .visible(true) 
+        .transparent(false) // Fixes DWM freeze on startup!
+        .build()
+        .map_err(|e| e.to_string())?;
+
+        let hwnd = window.hwnd().map_err(|e| e.to_string())?;
+        let hwnd_ptr: HWND = unsafe { std::mem::transmute(hwnd) };
 
         unsafe {
+            use winapi::um::dwmapi::DwmSetWindowAttribute;
+            let dwmwa_window_corner_preference: u32 = 33;
+            let preference: i32 = 1; // DWMWCP_DONOTROUND
+            DwmSetWindowAttribute(
+                hwnd_ptr, 
+                dwmwa_window_corner_preference, 
+                &preference as *const _ as *const winapi::ctypes::c_void, 
+                std::mem::size_of::<i32>() as u32
+            );
+
+            use winapi::um::winuser::{SetParent, GWL_STYLE, GWL_EXSTYLE, WS_CHILD, WS_VISIBLE, ScreenToClient, MoveWindow};
             SetParent(hwnd_ptr, worker_w);
+            
             SetWindowLongW(
                 hwnd_ptr,
                 GWL_STYLE,
-                (WS_CHILD | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | WS_VISIBLE) as i32,
+                (WS_CHILD | WS_VISIBLE) as i32,
             );
-            use winapi::um::winuser::{SWP_NOMOVE, SWP_NOSIZE};
+            SetWindowLongW(hwnd_ptr, GWL_EXSTYLE, 0);
+            
+            // Map the physical screen origin (0, 0) to WorkerW's internal client coordinates.
+            // If WorkerW is offset by 8px, this returns (-8, -8), guaranteeing we perfectly cover the screen!
+            let mut pt = winapi::shared::windef::POINT { x: min_x, y: min_y };
+            ScreenToClient(worker_w, &mut pt);
+            
+            // Force the window to perfectly align with the screen, neutralizing ANY WorkerW offsets
+            MoveWindow(hwnd_ptr, pt.x, pt.y, width as i32, height as i32, 1);
+            
+            use winapi::um::winuser::{SetWindowPos, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_FRAMECHANGED, SWP_SHOWWINDOW, HWND_BOTTOM};
+            // Final frame update
             SetWindowPos(
                 hwnd_ptr,
-                null_mut(),
-                0,
-                0,
-                0,
-                0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOZORDER | SWP_SHOWWINDOW,
+                HWND_BOTTOM,
+                0, 0, 0, 0,
+                SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED | SWP_SHOWWINDOW,
             );
         }
     }
@@ -595,7 +623,7 @@ async fn set_video_wallpaper(
 
 #[tauri::command]
 async fn copy_local_wallpaper(source: String, dest: String) -> Result<(), String> {
-    std::fs::copy(&source, &dest).map_err(|e| format!("Failed to copy file: {}", e))?;
+    tokio::fs::copy(&source, &dest).await.map_err(|e| format!("Failed to copy file: {}", e))?;
     Ok(())
 }
 
