@@ -612,10 +612,76 @@ async fn set_video_wallpaper(
         }
     }
     
-    // For non-Windows platforms, we can just throw an error
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
     {
-        return Err("Video wallpapers are currently only supported on Windows.".to_string());
+        let window_label = "video_bg";
+        let video_url = player_url.unwrap_or_else(|| url.clone());
+        
+        if let Some(old) = app.get_webview_window(window_label) {
+            let _ = old.close();
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        }
+        
+        let encoded_url: String = url::form_urlencoded::byte_serialize(video_url.as_bytes()).collect();
+        let window = tauri::WebviewWindowBuilder::new(
+            &app,
+            window_label,
+            tauri::WebviewUrl::App(format!("/?videoUrl={}", encoded_url).parse().unwrap())
+        )
+        .title("CozyPixels Video Wallpaper")
+        .decorations(false)
+        .transparent(false)
+        .always_on_bottom(true)
+        .fullscreen(true)
+        .build()
+        .map_err(|e| e.to_string())?;
+        
+        use cocoa::base::id;
+        use objc::{msg_send, sel, sel_impl};
+        use tauri::Manager;
+        
+        let ns_window = window.ns_window().map_err(|e| e.to_string())? as id;
+        
+        unsafe {
+            // kCGDesktopWindowLevel is -2147483648
+            let desktop_level: i32 = -2147483648; 
+            let _: () = msg_send![ns_window, setLevel: desktop_level];
+            
+            // NSWindowCollectionBehaviorCanJoinAllSpaces
+            let behavior: u64 = 1 << 4; 
+            let _: () = msg_send![ns_window, setCollectionBehavior: behavior];
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let window_label = "video_bg";
+        let video_url = player_url.unwrap_or_else(|| url.clone());
+        
+        if let Some(old) = app.get_webview_window(window_label) {
+            let _ = old.close();
+            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        }
+        
+        let encoded_url: String = url::form_urlencoded::byte_serialize(video_url.as_bytes()).collect();
+        let _window = tauri::WebviewWindowBuilder::new(
+            &app,
+            window_label,
+            tauri::WebviewUrl::App(format!("/?videoUrl={}", encoded_url).parse().unwrap())
+        )
+        .title("CozyPixels Video Wallpaper")
+        .decorations(false)
+        .transparent(false)
+        .always_on_bottom(true)
+        .fullscreen(true)
+        .build()
+        .map_err(|e| e.to_string())?;
+    }
+    
+    // For unsupported platforms
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        return Err("Video wallpapers are currently only supported on Windows, macOS, and Linux.".to_string());
     }
     
     Ok(())
