@@ -432,7 +432,7 @@ export default function App() {
        
     const rustUrl = wallpaper.realPath || (url.startsWith('asset://localhost/') ? url.replace('asset://localhost/', '') : url);
        
-    const isAnimatedDesktop = wallpaper.path.toLowerCase().endsWith('.mp4') || wallpaper.path.toLowerCase().endsWith('.webm') || wallpaper.path.toLowerCase().endsWith('.mkv') || wallpaper.path.toLowerCase().endsWith('.gif');
+    const isAnimatedDesktop = wallpaper.path.toLowerCase().endsWith('.mp4') || wallpaper.path.toLowerCase().endsWith('.webm') || wallpaper.path.toLowerCase().endsWith('.mkv');
        
     setSettingWallpaper(wallpaper.path);
     try {
