@@ -11,6 +11,11 @@
       "entrypoint": "server.js"
     }
   },
+  "functions": {
+    "backend/**/*.js": {
+      "excludeFiles": "{desktop,frontend,extension,.git}/**"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
