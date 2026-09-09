@@ -3,12 +3,17 @@
     "frontend": {
       "root": "frontend",
       "routePrefix": "/",
-      "framework": "vite"
+      "framework": "astro"
     },
     "backend": {
       "root": "backend",
       "routePrefix": "/api",
       "entrypoint": "server.js"
+    }
+  },
+  "functions": {
+    "backend/**/*.js": {
+      "excludeFiles": "{desktop,frontend,extension,.git}/**"
     }
   },
   "headers": [
