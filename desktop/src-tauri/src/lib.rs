@@ -352,8 +352,21 @@ async fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
     tokio::fs::read(&path).await.map_err(|e| format!("Failed to read file: {}", e))
 }
 
+fn is_safe_extension(path: &str) -> bool {
+    let p = std::path::Path::new(path);
+    if p.components().any(|c| c == std::path::Component::ParentDir) {
+        return false;
+    }
+    let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+    let allowed = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "avif", "mp4", "webm", "mkv"];
+    allowed.contains(&ext.as_str())
+}
+
 #[tauri::command]
 async fn delete_local_wallpaper(path: String) -> Result<(), String> {
+    if !is_safe_extension(&path) {
+        return Err("Invalid file extension or path".to_string());
+    }
     tokio::fs::remove_file(&path).await.map_err(|e| format!("Failed to delete file: {}", e))
 }
 

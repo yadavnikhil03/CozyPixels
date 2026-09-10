@@ -41,14 +41,22 @@ export const VideoBackgroundPlayer = ({ initialUrl }) => {
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', backgroundColor: 'black', margin: 0 }}>
-      <video 
-        src={videoUrl} 
-        autoPlay 
-        loop 
-        muted 
-        playsInline 
-        style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
-      />
+      {videoUrl.toLowerCase().endsWith('.gif') ? (
+        <img 
+          src={videoUrl} 
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
+          alt="Wallpaper"
+        />
+      ) : (
+        <video 
+          src={videoUrl} 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
+        />
+      )}
     </div>
   );
 };
