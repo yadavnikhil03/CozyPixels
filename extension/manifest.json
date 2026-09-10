@@ -1,15 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Cozy Engine",
-  "version": "1.3.3",
+  "version": "1.3.6",
   "description": "Your serene digital sanctuary in every new tab.",
   "permissions": ["storage", "alarms", "history", "tabs", "favicon", "unlimitedStorage"],
   "host_permissions": [
     "https://cozy-pixels.vercel.app/*",
     "https://cdn.jsdelivr.net/*",
-    "http://localhost:3001/*",
-    "http://*/*",
-    "https://*/*"
+    "http://localhost:3001/*"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"

@@ -1,3 +1,17 @@
+// Cozy Engine — local live-wallpaper storage.
+//
+// Why IndexedDB and not chrome.storage.local: chrome.storage.local has a
+// tight quota (a few MB unless "unlimitedStorage" is granted, and even then
+// it's designed for small settings blobs, not large binary files). Video
+// files in particular can easily be tens of MB. IndexedDB is built for
+// exactly this — large binary Blobs, with a much larger browser-managed
+// quota — and critically, everything stored here NEVER leaves the browser.
+// There is no upload, no server, no sync. This is the "stays on this
+// system only" storage layer for the user's own video/gif files.
+//
+// Loaded as a plain classic script (matches the rest of this extension's
+// style — no bundler, no ES modules) and exposes a single global
+// `CozyDB` namespace so it doesn't pollute the global scope.
 
 const CozyDB = (() => {
   const DB_NAME = 'CozyLiveWallpapers';

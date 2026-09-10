@@ -7,9 +7,7 @@
   "host_permissions": [
     "https://cozy-pixels.vercel.app/*",
     "https://cdn.jsdelivr.net/*",
-    "http://localhost:3001/*",
-    "http://*/*",
-    "https://*/*"
+    "http://localhost:3001/*"
   ],
   "chrome_url_overrides": {
     "newtab": "newtab.html"

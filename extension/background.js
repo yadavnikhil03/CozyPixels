@@ -50,7 +50,14 @@ async function fetchAndSaveWallpapers() {
 
 async function rotateWallpaper() {
   try {
-    
+    // Skip entirely while a live wallpaper (video/gif/web) is active — the
+    // static image would just be fetched, base64-encoded, and cached into
+    // storage for nothing, since #live-wallpaper-layer is drawn on top of
+    // it and it's never actually seen. This is exactly the "the rotation
+    // timer is a static-wallpaper-only thing" boundary: the alarm keeps
+    // ticking on schedule so it picks back up immediately once live mode
+    // is turned off, but does zero network/storage work while it wouldn't
+    // be visible anyway.
     const liveState = await chrome.storage.local.get(['toggleLiveWallpaper']);
     if (liveState.toggleLiveWallpaper) {
       console.log('Cozy Engine: skipping static rotation — live wallpaper is active');
@@ -61,7 +68,7 @@ async function rotateWallpaper() {
     
     let wallpapersList = result.allWallpapers || [];
     
-    
+    // Filter list to favorites if settings dictate and there are favorites
     if (result.toggleCycleFavorites && result.favoriteWallpapers && result.favoriteWallpapers.length > 0) {
       wallpapersList = result.favoriteWallpapers;
     }
@@ -100,7 +107,7 @@ async function rotateWallpaper() {
         cachedImage: null,
         currentMeta: selected
       });
-      
+      // Try to notify newtab UI to refresh background even if image caching failed
       chrome.runtime.sendMessage({ action: "refreshUI" }).catch(() => {});
     }
   } catch (err) {
@@ -108,12 +115,36 @@ async function rotateWallpaper() {
   }
 }
 
+// Security: Restrict allowed messaging origins for runtime events
+const SECURE_ORIGINS = [
+  'https://cozy-pixels.vercel.app',
+  'https://cozy-pixels.eu.org',
+  'https://cdn.jsdelivr.net'
+];
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Security validation: Verify message origin if sender is web page
+  if (sender.tab && sender.tab.url) {
+    try {
+      const tabUrl = new URL(sender.tab.url);
+      const origin = tabUrl.origin;
+      const isLocalhost = tabUrl.hostname === 'localhost' || tabUrl.hostname === '127.0.0.1';
+
+      if (!SECURE_ORIGINS.includes(origin) && !isLocalhost) {
+        console.warn('Blocked runtime message from untrusted origin:', origin);
+        return false;
+      }
+    } catch (e) {
+      console.error('Failed to parse sender URL:', e);
+      return false;
+    }
+  }
+
   if (request.action === "triggerRotation") {
     rotateWallpaper().then(() => sendResponse({ success: true }));
-    return true; 
+    return true;
   }
-  
+
   if (request.action === "updateTimer") {
     const newInterval = parseInt(request.interval, 10);
     if (newInterval && newInterval > 0) {

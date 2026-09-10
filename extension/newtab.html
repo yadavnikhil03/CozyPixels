@@ -10,32 +10,35 @@
   <link rel="stylesheet" href="newtab.css">
 </head>
 <body>
-  
+  <!-- Zen Mode Indicator -->
   <div id="zen-indicator">Zen Mode Active. Press Esc or Double-Click to exit.</div>
 
- 
+  <!-- Full screen background image -->
   <div id="sanctuary-bg"></div>
 
-  
+  <!-- Live wallpaper layer: sits on top of #sanctuary-bg (same stacking
+       context, later in DOM order), shown only when a live wallpaper is
+       enabled. Only one of these three is ever visible at a time,
+       controlled entirely by live-wallpaper.js. -->
   <div id="live-wallpaper-layer">
     <video id="live-video" autoplay muted loop playsinline></video>
     <iframe id="live-web" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Live web wallpaper"></iframe>
     <div id="live-gif-bg"></div>
   </div>
   
- 
+  <!-- Configurable overlay dimmer -->
   <div id="bg-dimmer-overlay"></div>
 
-
+  <!-- Primary Centered Interface -->
   <div class="overlay">
     <div class="center-content">
-      
+      <!-- Clock Widget -->
       <div id="clock-widget" class="widget-fade">
         <div id="clock">00:00</div>
         <span id="clock-ampm"></span>
       </div>
       
-      
+      <!-- Greeting Widget -->
       <div id="greeting-widget" class="widget-fade">
         <div id="greeting">Breathe in, breathe out.</div>
         <div id="quote-container" class="quote-card">
@@ -44,7 +47,7 @@
         </div>
       </div>
 
-      
+      <!-- Google Search Widget -->
       <div id="search-widget" class="widget-fade">
         <form id="search-form" action="https://www.google.com/search" method="get">
           <div class="search-bar-container">
@@ -54,7 +57,7 @@
         </form>
       </div>
 
-      
+      <!-- Daily Focus Goal Widget -->
       <div id="focus-widget" class="widget-fade">
         <div id="focus-prompt">What is your focus for today?</div>
         <div id="focus-setup-container">
@@ -72,15 +75,16 @@
         </div>
       </div>
 
-    
+      <!-- Most Visited Websites Widget -->
       <div id="most-visited-widget" class="widget-fade">
         <div id="most-visited-list" class="most-visited-list" role="toolbar" aria-label="Most visited websites">
+          <!-- Populated dynamically by newtab.js -->
         </div>
       </div>
     </div>
   </div>
 
-
+  <!-- Bottom-Left Wallpaper Info & Actions -->
   <div class="bottom-left-panel">
     <div class="vibe-card">
       <div class="vibe-text-group">
@@ -88,13 +92,16 @@
         <h3 id="wallpaper-name">Cozy Sanctuary</h3>
       </div>
       <div class="vibe-actions">
+        <!-- Next random vibe button -->
         <button id="next-vibe-btn" class="icon-btn-accent" title="Next Random Vibe">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
         </button>
+        <!-- Favorite toggle button -->
         <button id="favorite-vibe-btn" class="icon-btn-accent" title="Favorite Vibe">
           <svg class="heart-outline" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           <svg class="heart-filled" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
         </button>
+        <!-- Download wallpaper button -->
         <button id="download-vibe-btn" class="icon-btn-accent" title="Download Wallpaper">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
         </button>
@@ -102,15 +109,16 @@
     </div>
   </div>
 
-  
+  <!-- Bottom-Right Floating Controls (Soundscapes & Settings) -->
   <div class="bottom-right-panel">
+    <!-- Soundscapes controls -->
     <div id="soundscape-widget" class="soundscape-container">
       <button id="soundscape-toggle-btn" class="floating-trigger" title="Ambient Soundscapes">
         <svg class="icon-speaker" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
         <svg class="icon-mute" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
       </button>
       
-      
+      <!-- Popover menu for soundscape selections -->
       <div id="soundscape-popover" class="glass-panel popover">
         <h4>Soundscapes</h4>
         <div class="soundscape-option" data-sound="rain">
@@ -136,12 +144,13 @@
       </div>
     </div>
 
+    <!-- Zen Garden widget -->
     <div id="zen-garden-widget" class="soundscape-container">
       <button id="zen-garden-toggle-btn" class="floating-trigger" title="Zen Garden">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12M12 12c-4 0-6-3-6-6M12 12c4 0 6-3 6-6M12 17c-2 0-3-2-3-4M12 17c2 0 3-2 3-4"/></svg>
       </button>
       
-      
+      <!-- Popover menu for Zen Garden -->
       <div id="zen-garden-popover" class="glass-panel popover">
         <div class="zen-garden-header">
           <h4>Zen Garden</h4>
@@ -170,11 +179,13 @@
       </div>
     </div>
 
+    <!-- Main Settings Button -->
     <button id="settings-toggle-btn" class="floating-trigger" title="Sanctuary Settings">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     </button>
   </div>
 
+  <!-- Settings Slide-out Drawer -->
   <div id="settings-drawer" class="glass-panel drawer">
     <div class="drawer-header">
       <h3>Settings</h3>
@@ -184,6 +195,7 @@
     </div>
     
     <div class="drawer-body">
+      <!-- General Personalization Section -->
       <div class="settings-section">
         <h4>Personalization</h4>
         <div class="setting-item">
@@ -192,7 +204,7 @@
         </div>
       </div>
 
-
+      <!-- Display & Widgets Customization -->
       <div class="settings-section">
         <h4>Widgets Display</h4>
         <div class="setting-item-toggle">
@@ -232,7 +244,7 @@
         </div>
       </div>
 
-      
+      <!-- Background Visuals -->
       <div class="settings-section">
         <h4>Sanctuary Ambience</h4>
         <div class="setting-item">
@@ -260,6 +272,7 @@
       </div>
 
 
+      <!-- Most Visited Ranking -->
       <div class="settings-section">
         <h4>Most Visited</h4>
         <div class="setting-item">
@@ -297,6 +310,7 @@
         </div>
       </div>
 
+      <!-- Live Wallpapers Section -->
       <div class="settings-section">
         <h4>Live Wallpapers</h4>
         <div class="setting-item-toggle">
@@ -325,10 +339,10 @@
         <span id="live-wp-storage" class="live-wp-storage" style="display:none;"></span>
       </div>
 
-      
+      <!-- Links & Info -->
       <div class="settings-footer-info">
         <a href="https://cozy-pixels.vercel.app" target="_blank" class="accent-link">Visit Cozy Sanctuary Website</a>
-        <div class="drawer-version">Cozy Engine v1.3.3</div>
+        <div class="drawer-version">Cozy Engine v1.3.4</div>
       </div>
     </div>
   </div>

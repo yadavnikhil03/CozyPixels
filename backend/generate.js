@@ -23,12 +23,20 @@ const findImages = (dir, category) => {
         const ext = path.extname(file).toLowerCase();
         if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.mp4', '.webm', '.mkv'].includes(ext)) {
           const relativePath = path.relative(PUBLIC_DIR, filePath).replace(/\\/g, '/');
+
+          // Security: Prevent directory traversal in generated paths
+          if (relativePath.includes('..')) {
+            console.warn(`Security warning: Path traversal attempt skipped: ${relativePath}`);
+            return;
+          }
+
           const encodedPath = relativePath.split('/').map(segment => encodeURIComponent(segment)).join('/');
+
+          // Security: Expose minimal safe metadata only - removed redundant/sensitive fields
           results.push({
             name: file,
-            path: `/${encodedPath}`, 
-            category: category,
-            downloadPath: `/${encodedPath}`
+            path: `/${encodedPath}`,
+            category: category
           });
         }
       }

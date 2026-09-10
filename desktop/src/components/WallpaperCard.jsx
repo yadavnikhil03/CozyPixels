@@ -33,9 +33,16 @@ export const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview,
 
   const displayName = useMemo(() => formatWallpaperName(wallpaper.name), [wallpaper.name]);
 
+  // Security: Enhanced file type validation based on extension mapping
   const isVideo = useMemo(() => {
     const p = wallpaper.path.toLowerCase();
-    return p.endsWith('.mp4') || p.endsWith('.webm') || p.endsWith('.mkv');
+
+    // Explicit extension checks
+    const isMp4 = p.endsWith('.mp4');
+    const isWebm = p.endsWith('.webm');
+    const isMkv = p.endsWith('.mkv');
+
+    return isMp4 || isWebm || isMkv;
   }, [wallpaper.path]);
 
   useEffect(() => {

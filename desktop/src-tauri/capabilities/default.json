@@ -6,15 +6,6 @@
   "permissions": [
     "core:default",
     "opener:default",
-    "dialog:default",
-    "fs:default",
-    {
-      "identifier": "fs:allow-read",
-      "allow": [
-        { "path": "$APP_CACHE/**" },
-        { "path": "$DOWNLOAD/**" },
-        { "path": "$PICTURES/**" }
-      ]
-    }
+    "dialog:default"
   ]
 }

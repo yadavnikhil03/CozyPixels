@@ -33,6 +33,7 @@
     "astro": "^7.2.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cozypixels-desktop": "file:../desktop",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "lenis": "^1.3.23",

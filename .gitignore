@@ -11,6 +11,7 @@ backend/package-lock.json
 .env
 .env.local
 .env.*.local
+backend/.env.example
 
 dist/
 build/
@@ -33,3 +34,4 @@ desktop/src-tauri/gen/
 extension/md.mdr u n s . j s o n  
  
 .agents/
+

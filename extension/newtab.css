@@ -58,6 +58,15 @@ body, html {
   pointer-events: none;
 }
 
+/* Live wallpaper layer — sits at the same z-index as #sanctuary-bg but
+   later in DOM order, so it paints on top when active. Hidden (opacity 0,
+   pointer-events none) whenever no live wallpaper is enabled, so it never
+   intercepts clicks or shows a flash of empty black. #bg-dimmer-overlay
+   (z-index 1, unchanged) still sits above this too, so the dimmer setting
+   applies consistently whether the background is a static image or live.
+   Deliberately does NOT inherit #sanctuary-bg's blur/scale filter — a live
+   video/web wallpaper isn't meant to be softened the same way a static
+   photo backdrop is. */
 #live-wallpaper-layer {
   position: absolute;
   inset: 0;
@@ -105,7 +114,7 @@ body, html {
   background: #000000;
   z-index: 1;
   pointer-events: none;
-  opacity: 0.20; 
+  opacity: 0.20; /* Default dimmer setting (20%) */
   transition: opacity 0.3s ease;
 }
 
@@ -131,7 +140,7 @@ body, html {
   pointer-events: auto;
 }
 
-
+/* Fade animation for widgets load */
 .widget-fade {
   opacity: 0;
   transform: translateY(8px);
@@ -164,6 +173,7 @@ body, html {
   letter-spacing: -0.04em;
   line-height: 0.95;
   text-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  /* Prevents horizontal layout jumps on clock ticks */
   font-variant-numeric: tabular-nums;
   user-select: none;
 }
@@ -177,7 +187,7 @@ body, html {
   text-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-
+/* 4. Greeting & Quote Widget */
 #greeting-widget {
   display: flex;
   flex-direction: column;
@@ -358,7 +368,7 @@ body, html {
   display: none;
 }
 
-
+/* Custom checkbox circle styling */
 .custom-checkbox {
   width: 18px;
   height: 18px;
@@ -481,6 +491,7 @@ body, html {
   pointer-events: auto;
 }
 
+/* Floating button basic triggers */
 .floating-trigger {
   width: 48px;
   height: 48px;
@@ -508,6 +519,7 @@ body, html {
   transform: scale(0.92) translateY(-1px);
 }
 
+/* Rotate gear on settings hover */
 #settings-toggle-btn:hover svg {
   transform: rotate(90deg);
 }
@@ -515,6 +527,7 @@ body, html {
   transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Rotate Zen Garden icon slightly on hover */
 #zen-garden-toggle-btn:hover svg {
   transform: rotate(15deg) scale(1.1);
 }
@@ -522,6 +535,7 @@ body, html {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* Scale sound icon on hover */
 #soundscape-toggle-btn:hover svg {
   transform: scale(1.1);
 }
@@ -529,6 +543,7 @@ body, html {
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+/* 9. Soundscapes Panel Popover */
 .soundscape-container {
   position: relative;
   display: flex;
@@ -748,7 +763,7 @@ body, html {
   background: rgba(255, 255, 255, 0.08);
 }
 
-
+/* Custom switch sliders */
 .setting-item-toggle {
   display: flex;
   justify-content: space-between;
@@ -838,7 +853,7 @@ input:checked + .slider:before {
   transform: scale(1.2);
 }
 
-
+/* Drawer Footer Links */
 .settings-footer-info {
   margin-top: auto;
   display: flex;
@@ -916,6 +931,7 @@ input:checked + .slider:before {
   transform: scale(0.9) translateY(0);
 }
 
+/* Rotate next vibe button arrow on hover */
 #next-vibe-btn:hover svg {
   transform: rotate(180deg);
 }
@@ -933,6 +949,7 @@ input:checked + .slider:before {
   background: var(--color-emerald-hover);
 }
 
+/* Custom Scrollbar for Settings Drawer */
 .drawer-body::-webkit-scrollbar {
   width: 6px;
 }
@@ -951,6 +968,7 @@ input:checked + .slider:before {
 }
 
 
+/* Zen / Zero-distraction Mode (Clean Vibe Mode) */
 .center-content,
 .bottom-left-panel,
 .bottom-right-panel {
@@ -999,6 +1017,7 @@ input:checked + .slider:before {
   opacity: 0.8;
 }
 
+/* Zen Garden Widget Styles */
 .zen-garden-header {
   display: flex;
   justify-content: space-between;
@@ -1205,6 +1224,7 @@ input:checked + .slider:before {
   text-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
+/* "x" remove button, revealed on hover/focus so the chip stays clean by default */
 .mv-remove-btn {
   position: absolute;
   top: 4px;
@@ -1241,6 +1261,7 @@ input:checked + .slider:before {
   transform: scale(0.85);
 }
 
+/* Fade/scale-out played right before a hidden site is re-ranked out */
 .mv-site.mv-removing {
   animation: mvChipRemove 0.2s ease forwards;
   pointer-events: none;
@@ -1250,6 +1271,7 @@ input:checked + .slider:before {
   to { opacity: 0; transform: scale(0.85) translateY(6px); }
 }
 
+/* Segmented control (used for the Daily / Weekly ranking toggle) */
 .segmented-control {
   display: flex;
   background: rgba(255, 255, 255, 0.05);
@@ -1295,6 +1317,7 @@ input:checked + .slider:before {
   line-height: 1.4;
 }
 
+/* Click ripple for Most Visited chips (150-250ms, matches existing micro-interactions) */
 .mv-ripple {
   position: absolute;
   border-radius: 50%;
@@ -1309,6 +1332,7 @@ input:checked + .slider:before {
   100% { transform: scale(1); opacity: 0; }
 }
 
+/* Enhanced Frosted-Glass look (Settings > Most Visited > Frosted Glass Look) */
 .mv-glass-enhanced .mv-site {
   background: rgba(255, 255, 255, 0.09);
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -1325,7 +1349,8 @@ input:checked + .slider:before {
   background: rgba(255, 255, 255, 0.14);
 }
 
-
+/* Favicon fallback: a small letter-avatar shown when a site's real favicon
+   fails to load, instead of leaving a broken/blank image behind. */
 .mv-favicon-fallback {
   width: 16px;
   height: 16px;
@@ -1339,6 +1364,7 @@ input:checked + .slider:before {
   color: var(--color-warm-white);
 }
 
+/* Small pin indicator for manually-pinned chips (vs auto-ranked ones) */
 .mv-site.mv-pinned {
   border-color: rgba(233, 196, 106, 0.35);
 }
@@ -1358,6 +1384,7 @@ input:checked + .slider:before {
   position: relative;
 }
 
+/* "Choose My Own Sites" add form, inside Settings (Most Visited section) */
 .mv-manual-add-panel {
   margin-top: 8px;
 }
@@ -1408,7 +1435,7 @@ input:checked + .slider:before {
   margin-top: 6px;
 }
 
-/*  Live Wallpapers settings section ---- */
+/* ---- Live Wallpapers settings section ---- */
 
 .live-wp-add-row {
   display: flex;

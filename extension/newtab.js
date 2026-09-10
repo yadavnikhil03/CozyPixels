@@ -68,6 +68,7 @@ function startSound(type) {
   if (activeSounds[type]) return;
 
   if (type === 'rain') {
+    // Background heavy rain rumble (pink noise lowpass)
     const source1 = audioCtx.createBufferSource();
     source1.buffer = getPinkNoiseBuffer();
     source1.loop = true;
@@ -1514,23 +1515,32 @@ const MV_KNOWN_SITES = {
   'spotify.com': 'Spotify'
 };
 
-
+// Bare search-engine homepages/search-results pages are excluded on purpose:
+// almost everyone hits google.com dozens of times a day just to search,
+// which would otherwise permanently bury real destination sites like
+// YouTube, Claude, or Spotify at the top of the list. Subdomains like
+// mail.google.com or docs.google.com are NOT affected by this - only the
+// bare "google.<tld>" search homepage itself.
 const MV_EXCLUDED_SEARCH_HOMEPAGES = /^google\.[a-z.]{2,}$/i;
 
-
+// URL patterns that should never be counted as a "visited website".
 const MV_IGNORED_URL_PATTERNS = [
   /^chrome:/i, /^chrome-extension:/i, /^chrome-search:/i, /^chrome-untrusted:/i,
   /^edge:/i, /^about:/i, /^devtools:/i, /^file:/i, /^view-source:/i
 ];
 
 const MV_MIN_REFRESH_INTERVAL_MS = 30000; // don't recompute more than once per 30s
-const MV_MAX_SLOTS = 5; 
+const MV_MAX_SLOTS = 5; // total chips shown: pinned sites first, then auto-ranked fill the rest
 let mvLastComputeTime = 0;
 
-
+// Bumped whenever the ranking/exclusion logic changes shape. A cached
+// result written by an older version (e.g. one that didn't exclude
+// google.com yet) is discarded instead of being shown, so a logic fix
+// can never be masked by a stale cached render.
 const MV_CACHE_VERSION = 2;
 
-
+// Strips common mobile/AMP subdomain prefixes so e.g. m.youtube.com and
+// youtube.com fold into the same group.
 function mvNormalizeHostname(hostname) {
   return hostname.toLowerCase().replace(/^(www|m|mobile|amp)\./, '');
 }
@@ -1547,10 +1557,18 @@ function mvEscapeHtml(str) {
   return div.innerHTML;
 }
 
-
+// Pulls recent browser history, groups it into logical "sites", and scores
+// each one by a blend of visit volume and recency so a site you used heavily
+// yesterday doesn't outrank one you're actively using today.
+// `excludedSet` keeps out anything that shouldn't appear in the auto-ranked
+// results: sites the user hid via the "x" button, AND sites already shown
+// as manually pinned (so a pinned site never gets duplicated below itself).
+// `excludedNameSet` catches the same real-world site reachable through a
+// different hostname (e.g. a pin on open.spotify.com shouldn't let plain
+// spotify.com sneak back in as a second "Spotify" chip).
 async function mvComputeRanking(mode, excludedSet, excludedNameSet) {
   if (!chrome.history || !chrome.history.search) {
-    return null;
+    return null; // signals "history permission unavailable" to the caller
   }
 
   const periodMs = mode === 'daily' ? 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
@@ -1608,7 +1626,8 @@ async function mvComputeRanking(mode, excludedSet, excludedNameSet) {
   candidates.forEach((c) => {
     const visitScore = maxVisits > 0 ? c.totalVisits / maxVisits : 0;
     const recencyScore = Math.max(0, Math.min(1, (c.lastVisit - startTime) / periodMs));
-    
+    // Visit volume matters most, but recent activity gets real weight too,
+    // so "today's" surge (e.g. GitHub) can outrank "this week's" leader.
     c.score = visitScore * 0.65 + recencyScore * 0.35;
   });
 
@@ -1638,7 +1657,9 @@ function mvRenderRanking(items) {
   }
 
   items.forEach((site, idx) => {
-   
+    // A real <button> can't legally contain another <button> (the remove
+    // control), so the chip itself is a div acting as a button (role +
+    // tabindex + keydown handling) with the remove button nested inside.
     const chip = document.createElement('div');
     chip.className = site.pinned ? 'mv-site mv-pinned' : 'mv-site';
     chip.setAttribute('role', 'button');
@@ -1659,7 +1680,10 @@ function mvRenderRanking(items) {
       chip.title = `${site.name} — ${visitLabel}`;
     }
 
-    
+    // site.sampleUrl must always be a real URL here (auto-ranked items get
+    // it from history; pinned items get it copied from their saved `url` in
+    // mvRefresh) - a missing sampleUrl was the root cause of pinned sites
+    // showing a broken favicon and opening a blank tab instead of the site.
     const faviconUrl = site.sampleUrl
       ? `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(site.sampleUrl)}&size=32`
       : '';
@@ -1709,7 +1733,10 @@ function mvRenderRanking(items) {
   });
 }
 
-
+// Replaces a broken favicon <img> with a small letter-avatar instead of
+// leaving a blank/broken image icon behind. Called from the inline
+// onerror handler, so it must be a global function (newtab.js is a plain
+// script, not a module).
 function mvFaviconFallback(imgEl, letter) {
   const span = document.createElement('span');
   span.className = 'mv-favicon-fallback';
@@ -1739,7 +1766,10 @@ function mvSpawnRipple(btn, event) {
   ripple.addEventListener('animationend', () => ripple.remove());
 }
 
-
+// Permanently removes a site from Most Visited. This is a one-way action
+// by design - there's no "Hidden Sites" list to restore from. Plays a
+// quick fade/scale-out, then re-ranks so the next-best site backfills the
+// freed slot.
 async function mvHideSite(hostname, chipEl) {
   if (chipEl) chipEl.classList.add('mv-removing');
 
@@ -1748,11 +1778,19 @@ async function mvHideSite(hostname, chipEl) {
   if (!hidden.includes(hostname)) hidden.push(hostname);
   await chrome.storage.local.set({ mvHiddenSites: hidden });
 
- 
+  // Let the removal animation finish before re-rendering the row.
   setTimeout(() => mvRefresh(true), 220);
 }
 
+// --- Manually pinned sites ("Choose My Own Sites") ---
+// Lets the user directly choose which sites show up, instead of relying
+// only on auto-detected history. Pinned sites always take the first slots;
+// auto-ranked history fills whatever's left, up to MV_MAX_SLOTS total.
+// Managed entirely from Settings (behind the "Choose My Own Sites" toggle) -
+// pinned chips still live in the row itself, with their own "x" to unpin.
 
+// Accepts things like "spotify.com", "www.spotify.com", or a full URL, and
+// returns a normalized URL object, or null if it's not a usable address.
 function mvParseUserSiteInput(raw) {
   let value = (raw || '').trim();
   if (!value) return null;
@@ -1777,7 +1815,9 @@ async function mvPinSite(urlObj) {
   if (pinned.some((p) => p.hostname === hostname)) {
     return { error: `${name} is already pinned.` };
   }
-  
+  // Belt-and-suspenders: catches cases where two different hostnames
+  // resolve to the same real-world site (e.g. open.spotify.com vs
+  // spotify.com) but aren't caught by the exact hostname check above.
   if (pinned.some((p) => p.name.toLowerCase() === name.toLowerCase())) {
     return { error: `${name} is already pinned.` };
   }
@@ -1786,7 +1826,7 @@ async function mvPinSite(urlObj) {
   }
 
   pinned.push({ hostname, name, url: urlObj.href });
-  
+  // Pinning always wins over a previous hide.
   const hidden = (Array.isArray(mvHiddenSites) ? mvHiddenSites : []).filter((h) => h !== hostname);
 
   await chrome.storage.local.set({ mvPinnedSites: pinned, mvHiddenSites: hidden });
@@ -1804,13 +1844,14 @@ async function mvUnpinSite(hostname, chipEl) {
   setTimeout(() => mvRefresh(true), 220);
 }
 
-
+// Shows/hides the "Choose My Own Sites" add-a-site panel in Settings.
 function mvSetManualPanelVisible(visible) {
   const panel = document.getElementById('mv-manual-add-panel');
   if (panel) panel.hidden = !visible;
 }
 
-
+// Switches to an already-open tab for this site instead of opening a
+// duplicate; only falls back to creating a new tab if none is found.
 async function mvHandleClick(site) {
   try {
     const tabs = await chrome.tabs.query({});
@@ -1848,23 +1889,29 @@ async function mvRefresh(force = false) {
   const mode = mvRankingMode === 'daily' ? 'daily' : 'weekly';
   const pinned = Array.isArray(mvPinnedSites) ? mvPinnedSites : [];
 
-  
+  // Auto-ranking must skip both hidden sites AND anything already pinned,
+  // so a pinned site never shows up a second time further down the row.
   const excludedSet = new Set([
     ...(Array.isArray(mvHiddenSites) ? mvHiddenSites : []),
     ...pinned.map((p) => p.hostname)
   ]);
-  
+  // Also exclude by display name, in case the pinned hostname is a
+  // different subdomain of the same real site (e.g. pinning
+  // open.spotify.com shouldn't let plain spotify.com sneak back in).
   const excludedNameSet = new Set(pinned.map((p) => p.name.toLowerCase()));
 
   const remainingSlots = Math.max(0, MV_MAX_SLOTS - pinned.length);
   const autoItems = remainingSlots > 0 ? await mvComputeRanking(mode, excludedSet, excludedNameSet) : [];
 
-  
+  // Pinned entries are stored with a `.url` field, but rendering/opening
+  // code (favicon fetch + click-to-open) expects `.sampleUrl` - without
+  // this mapping, pinned chips showed a broken favicon and clicking one
+  // opened a blank new tab instead of the actual site.
   const pinnedItems = pinned.map((p) => ({ ...p, pinned: true, sampleUrl: p.url }));
 
   let finalItems;
   if (autoItems === null) {
-    
+    // History permission unavailable - still show pinned sites if any.
     finalItems = pinnedItems.length > 0 ? pinnedItems : null;
   } else {
     finalItems = [...pinnedItems, ...autoItems.slice(0, remainingSlots)].slice(0, MV_MAX_SLOTS);
@@ -1887,7 +1934,8 @@ function mvSetModeUI(mode) {
   weeklyBtn.setAttribute('aria-checked', mode === 'weekly');
 }
 
-
+// Toggles a stronger, more translucent frosted-glass look for the Most
+// Visited chips so more of the wallpaper artwork shows through them.
 function mvSetGlassUI(enabled) {
   const list = document.getElementById('most-visited-list');
   const toggle = document.getElementById('toggle-mv-glass');
@@ -1899,7 +1947,11 @@ function setupMostVisited() {
   const container = document.getElementById('most-visited-list');
   if (!container) return;
 
-  
+  // Render instantly from cache (if any) for a snappy first paint, then
+  // recompute in the background so the list is always fresh. A cache
+  // written by an older logic version (e.g. before google.com was
+  // excluded) is intentionally discarded rather than shown - this is what
+  // previously let a stale "google.com" chip flash back in after a fix.
   chrome.storage.local.get(
     ['mvCache', 'mvRankingMode', 'mvGlassEnhanced', 'mvPinnedSites', 'mvManualAddEnabled'],
     (result) => {
@@ -1921,15 +1973,16 @@ function setupMostVisited() {
     }
   );
 
-  
+  // Real-time updates: react to new history entries while this tab is open,
+  // throttled so we never hammer the History API.
   if (chrome.history && chrome.history.onVisited) {
     chrome.history.onVisited.addListener(() => mvRefresh(false));
   }
 
- 
+  // Backstop poll in case no history events fire while the page is open.
   setInterval(() => mvRefresh(false), MV_MIN_REFRESH_INTERVAL_MS);
 
-  
+  // Settings drawer: Daily / Weekly segmented toggle.
   const dailyBtn = document.getElementById('mv-mode-daily');
   const weeklyBtn = document.getElementById('mv-mode-weekly');
 
@@ -1949,7 +2002,7 @@ function setupMostVisited() {
     });
   }
 
-  
+  // Settings drawer: Glassmorphism toggle for the Most Visited chips.
   const glassToggle = document.getElementById('toggle-mv-glass');
   if (glassToggle) {
     glassToggle.addEventListener('change', () => {
@@ -1960,7 +2013,9 @@ function setupMostVisited() {
     });
   }
 
-  
+  // Settings drawer: "Choose My Own Sites" toggle - shows/hides the add
+  // form. Lives entirely inside Settings now, not as a floating box next
+  // to the row.
   const manualToggle = document.getElementById('toggle-mv-manual');
   if (manualToggle) {
     manualToggle.addEventListener('change', () => {
@@ -1971,7 +2026,8 @@ function setupMostVisited() {
     });
   }
 
-  
+  // Settings drawer: the "Add a site" form itself (only visible while the
+  // toggle above is on).
   const addInput = document.getElementById('mv-add-input');
   const addConfirmBtn = document.getElementById('mv-add-confirm');
   const addErrorEl = document.getElementById('mv-add-error');
