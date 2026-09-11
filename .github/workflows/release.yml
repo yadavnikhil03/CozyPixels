@@ -17,7 +17,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: desktop/package-lock.json
 
@@ -27,9 +27,11 @@ jobs:
 
       - name: Run unit tests
         run: npm test
+        working-directory: desktop
 
       - name: Build frontend
         run: npm run build
+        working-directory: desktop
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
@@ -68,7 +70,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
           cache-dependency-path: desktop/package-lock.json
 
