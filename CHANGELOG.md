@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.6.0] - 2026-09-11
+
+### Improved
+
+- **Native GIF Renderer:** Replaced WebView2 with a direct GDI renderer for animated wallpapers; uses pure Win32 BitBlt + timer inside the desktop host window so DWM compositor conflicts never occur.
+- **Local Wallpaper Thumbnails:** Enabled the Tauri `asset://` protocol and updated CSP so local wallpaper cards load correctly instead of showing "Failed to load".
+- **Shared Constants:** Centralised CDN URLs and file-extension lists into a single module shared by the gallery, lightbox, and download dialog.
+- **Auto-Rotate Reliability:** Collapsed the four auto-rotate effects into one deterministic effect; fixed the tray toggle, empty-pool guard, and `interval_ms` clamping.
+- **Rust Robustness:** Switched directory scanning to `spawn_blocking`, added a connect/transfer timeout to downloads, and ensured the download directory is created before writing.
+- **Frontend Test Suite:** Introduced Vitest with a real App render-test covering the sidebar, search input, and splash screen.
+- **Dead-Code Cleanup:** Removed `read_file_bytes`, `get_rotate_status`, orphan `src/` components, unused plugin dependencies, and all code comments across JS, JSX, CSS, and Rust.
+
+### Fixed
+
+- **Animated GIF Not Applying:** WebView2 could not composite inside a desktop-layer child window (triggered DWM watchdog LiveKernelEvent crashes); animated wallpapers now bypass WebView2 entirely and render via native GDI.
+- **Local Thumbnails "Failed to load":** `img-src` CSP and the asset protocol were both missing the `asset.localhost` origin required by `convertFileSrc` on Windows.
+- **Download Corrupting GIF/MP4:** The download dialog filter only accepted image extensions; animated media is now recognised by a shared extension list.
+- **Lightbox Broken for Local Wallpapers:** The local-file preview gate was comparing against the wrong protocol string (`cozy://` instead of `asset://`).
+- **Splash Screen Never Rendered:** The `SplashScreen` component was imported but never mounted; it is now wired into the app root.
+
 ## [1.5.0] - 2026-09-04
 
 ### Improved

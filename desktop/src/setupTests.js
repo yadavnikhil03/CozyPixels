@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';
+import '@testing-library/jest-dom/vitest';
 import { vi } from 'vitest';
 
 Object.defineProperty(window, 'matchMedia', {
@@ -23,3 +23,15 @@ class IntersectionObserver {
 window.IntersectionObserver = IntersectionObserver;
 
 window.HTMLElement.prototype.scrollTo = function() {};
+
+vi.stubGlobal('fetch', vi.fn(() => Promise.resolve({
+  ok: true,
+  status: 200,
+  json: () => Promise.resolve([]),
+})));
+
+window.ResizeObserver = window.ResizeObserver || class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};

@@ -13,11 +13,13 @@
   --md-sys-color-surface-container-low: #f7f2d9;
   --md-sys-color-surface-container: #f1ebd2;
   --md-sys-color-surface-container-high: #ebe5cc;
+  --md-sys-color-surface-container-highest: #dfd9c0;
   --md-sys-color-on-surface: #1c1b16;
   --md-sys-color-on-surface-variant: #46464f;
   --md-sys-color-outline: #777680;
   --md-sys-color-outline-variant: #c7c5d0;
   --md-sys-color-error: #ba1a1a;
+  --md-sys-color-on-error: #ffffff;
   
   --elevation-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
   --elevation-2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
@@ -35,11 +37,13 @@
   --md-sys-color-surface-container-low: #181825;
   --md-sys-color-surface-container: #1e1e2e;
   --md-sys-color-surface-container-high: #27273a;
+  --md-sys-color-surface-container-highest: #303149;
   --md-sys-color-on-surface: #e5e2d9;
   --md-sys-color-on-surface-variant: #c7c5d0;
   --md-sys-color-outline: #918f9a;
   --md-sys-color-outline-variant: #46464f;
   --md-sys-color-error: #ffb4ab;
+  --md-sys-color-on-error: #3b0003;
   
   --elevation-1: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 1px 3px 1px rgba(0, 0, 0, 0.15);
   --elevation-2: 0px 1px 2px 0px rgba(0, 0, 0, 0.3), 0px 2px 6px 2px rgba(0, 0, 0, 0.15);
@@ -867,9 +871,7 @@ body {
 
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* === Enter/Exit CSS animations (replaces framer-motion) === */
 
-/* Universal fade-in animation (same as .fade-in) */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: translateY(0); }
@@ -889,7 +891,6 @@ body {
   to { opacity: 0; }
 }
 
-/* Toast enter */
 @keyframes toastIn {
   from { opacity: 0; transform: translateY(24px) scale(0.95); }
   to { opacity: 1; transform: translateY(0) scale(1); }
@@ -899,7 +900,6 @@ body {
   to { opacity: 0; transform: translateY(-8px) scale(0.95); }
 }
 
-/* Scale-in for modals */
 @keyframes scaleIn {
   from { opacity: 0; transform: scale(0.95) translateY(15px); }
   to { opacity: 1; transform: scale(1) translateY(0); }
@@ -909,13 +909,11 @@ body {
   to { opacity: 0; transform: scale(0.95) translateY(10px); }
 }
 
-/* Icon pop */
 @keyframes iconPop {
   from { transform: scale(0); }
   to { transform: scale(1); }
 }
 
-/* Animation wrapper classes */
 .anim-backdrop {
   animation: backdropIn 200ms ease both;
 }
@@ -941,7 +939,6 @@ body {
   animation: iconPop 400ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
-/* Height-expand animation (for rotate panel) */
 .anim-expand {
   overflow: hidden;
   animation: expandIn 300ms cubic-bezier(0.2, 0, 0, 1) both;
@@ -958,7 +955,6 @@ body {
   to { max-height: 0; opacity: 0; }
 }
 
-/* Update modal animations */
 .anim-update-modal {
   animation: updateIn 350ms cubic-bezier(0.2, 0, 0, 1) both;
 }
@@ -974,7 +970,6 @@ body {
   to { opacity: 0; transform: scale(0.92) translateY(30px); }
 }
 
-/* Progress bar animation */
 .anim-progress {
   animation: progressPulse 2s ease-in-out infinite;
 }
@@ -987,7 +982,6 @@ body {
 .update-backdrop {
   position: fixed;
   inset: 0;
-  /* frosted tint: subtle light/dark mix based on theme */
   background: linear-gradient(180deg, color-mix(in srgb, var(--md-sys-color-surface) 22%, rgba(0,0,0,0.78)), color-mix(in srgb, var(--md-sys-color-surface) 18%, rgba(0,0,0,0.82)));
   backdrop-filter: blur(18px) saturate(120%);
   -webkit-backdrop-filter: blur(18px) saturate(120%);
@@ -999,7 +993,6 @@ body {
 
 .update-modal {
   position: relative;
-  /* frosted surface to read over blurred background */
   background: color-mix(in srgb, var(--md-sys-color-surface) 92%, transparent);
   border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 40%, transparent);
   border-radius: 12px;
@@ -1337,7 +1330,6 @@ body {
   font-family: 'Geist', monospace;
 }
 
-/* ─── Splash Screen ─── */
 .splash {
   position: fixed;
   inset: 0;
@@ -1363,7 +1355,6 @@ body {
   gap: 20px;
 }
 
-/* Logo wrapper — holds SVG ring + icon */
 .splash__logo-wrap {
   position: relative;
   width: 96px;
@@ -1438,7 +1429,6 @@ body {
   .card__btn, .lb-btn, .update-btn, .nav__item { border: 1px solid ButtonText; }
 }
 
-/* Selection Mode */
 .card.selection-mode {
   cursor: pointer;
 }

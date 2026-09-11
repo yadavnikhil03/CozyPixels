@@ -11,13 +11,12 @@ export function useCachedImage(url) {
   useEffect(() => {
     let isMounted = true;
     
-    if (!url) {
-      setSrc(null);
+    if (!url || !url.startsWith('http')) {
+      setSrc(url);
       return;
     }
-    
-    // If it's already a local path, just use it
-    if (!url.startsWith('http')) {
+
+    if (url.startsWith('http://asset.localhost') || url.startsWith('https://asset.localhost')) {
       setSrc(url);
       return;
     }
@@ -31,7 +30,6 @@ export function useCachedImage(url) {
         }
       })
       .catch(() => {
-        // Keep the CDN URL as the fallback when local cache lookup fails.
       });
 
     const handleCacheCleared = event => {

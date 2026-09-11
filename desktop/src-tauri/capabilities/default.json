@@ -5,7 +5,6 @@
   "windows": ["main", "video_bg"],
   "permissions": [
     "core:default",
-    "opener:default",
     "dialog:default"
   ]
 }

@@ -6,6 +6,9 @@ use std::time::Duration;
 use tauri::Emitter;
 use sha2::{Digest, Sha256};
 
+#[cfg(target_os = "windows")]
+mod gif_wallpaper;
+
 const APP_USER_AGENT: &str = "CozyPixels-Desktop/1.0 (https://cozy-pixels.vercel.app)";
 
 fn http_client() -> &'static reqwest::Client {
@@ -23,6 +26,7 @@ fn http_client() -> &'static reqwest::Client {
 static ROTATE_RUNNING: AtomicBool = AtomicBool::new(false);
 static ROTATE_INTERVAL: AtomicU64 = AtomicU64::new(900000);
 static ROTATE_GENERATION: AtomicU64 = AtomicU64::new(0);
+static VIDEO_WALLPAPER_URL: Mutex<Option<String>> = Mutex::new(None);
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct WallpaperInfo {
@@ -33,10 +37,16 @@ struct WallpaperInfo {
 #[tauri::command]
 async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, String> {
     #[cfg(target_os = "windows")]
-    if let Some(video_window) = app.get_webview_window("video_bg") {
-        video_window
-            .destroy()
-            .map_err(|e| format!("Failed to stop live wallpaper: {}", e))?;
+    {
+        if let Some(video_window) = app.get_webview_window("video_bg") {
+            video_window
+                .destroy()
+                .map_err(|e| format!("Failed to stop live wallpaper: {}", e))?;
+        }
+        let app_for_main = app.clone();
+        if dispatch_main(&app_for_main, || unsafe { gif_wallpaper::destroy(); }).is_err() {
+            return Err("Failed to stop animated wallpaper".to_string());
+        }
     }
 
     if !url.starts_with("http://") && !url.starts_with("https://") {
@@ -174,7 +184,6 @@ async fn set_lock_screen(url: String) -> Result<String, String> {
         use windows::core::HSTRING;
         
         let path_str = if !url.starts_with("http") {
-            // It's a local path, convert to backslashes for Windows API
             url.replace('/', "\\")
         } else {
             let temp_dir = std::env::temp_dir();
@@ -225,12 +234,13 @@ async fn start_auto_rotate(
         return Err("No wallpapers provided".to_string());
     }
 
+    let interval_ms = interval_ms.max(60_000);
     let generation = ROTATE_GENERATION.fetch_add(1, std::sync::atomic::Ordering::SeqCst) + 1;
     ROTATE_RUNNING.store(true, std::sync::atomic::Ordering::SeqCst);
 
     let wallpapers = Arc::new(wallpapers);
-    let index = Arc::new(Mutex::new(start_index.unwrap_or(0)));
-    let initial_delay = initial_delay_ms.unwrap_or(interval_ms);
+    let index = Arc::new(Mutex::new(start_index.unwrap_or(0) % wallpapers.len()));
+    let initial_delay = initial_delay_ms.unwrap_or(interval_ms).min(interval_ms.max(60_000));
     ROTATE_INTERVAL.store(interval_ms, std::sync::atomic::Ordering::SeqCst);
 
     tauri::async_runtime::spawn(async move {
@@ -266,8 +276,9 @@ async fn start_auto_rotate(
 
             let current = {
                 let mut idx = index.lock().unwrap();
+                let wallpaper = wallpapers[*idx % wallpapers.len()].clone();
                 *idx = (*idx + 1) % wallpapers.len();
-                wallpapers[*idx].clone()
+                wallpaper
             };
 
             let url = current.url.clone();
@@ -311,34 +322,33 @@ fn stop_auto_rotate() -> Result<(), String> {
 }
 
 #[tauri::command]
-fn get_rotate_status() -> bool {
-    ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst)
-}
-
-#[tauri::command]
 fn update_rotate_interval(new_interval_ms: u64) {
-    ROTATE_INTERVAL.store(new_interval_ms, std::sync::atomic::Ordering::SeqCst);
+    ROTATE_INTERVAL.store(new_interval_ms.max(60_000), std::sync::atomic::Ordering::SeqCst);
 }
 
 #[tauri::command]
-fn scan_local_directory(path: String) -> Result<Vec<String>, String> {
-    let mut images = Vec::new();
-    let entries = std::fs::read_dir(&path).map_err(|e| format!("Failed to read dir: {}", e))?;
-    for entry in entries.flatten() {
-        if let Ok(file_type) = entry.file_type() {
-            if file_type.is_file() {
-                if let Some(name) = entry.file_name().to_str() {
-                    let name_lower = name.to_lowercase();
-                    if name_lower.ends_with(".jpg") || name_lower.ends_with(".jpeg") || name_lower.ends_with(".png") || name_lower.ends_with(".webp") || name_lower.ends_with(".gif") || name_lower.ends_with(".bmp") || name_lower.ends_with(".mp4") || name_lower.ends_with(".webm") || name_lower.ends_with(".mkv") {
-                        if let Some(path_str) = entry.path().to_str() {
-                            images.push(path_str.to_string());
+async fn scan_local_directory(path: String) -> Result<Vec<String>, String> {
+    tokio::task::spawn_blocking(move || {
+        let mut images = Vec::new();
+        let entries = std::fs::read_dir(&path).map_err(|e| format!("Failed to read dir: {}", e))?;
+        for entry in entries.flatten() {
+            if let Ok(file_type) = entry.file_type() {
+                if file_type.is_file() {
+                    if let Some(name) = entry.file_name().to_str() {
+                        let name_lower = name.to_lowercase();
+                        if name_lower.ends_with(".jpg") || name_lower.ends_with(".jpeg") || name_lower.ends_with(".png") || name_lower.ends_with(".webp") || name_lower.ends_with(".gif") || name_lower.ends_with(".bmp") || name_lower.ends_with(".mp4") || name_lower.ends_with(".webm") || name_lower.ends_with(".mkv") {
+                            if let Some(path_str) = entry.path().to_str() {
+                                images.push(path_str.to_string());
+                            }
                         }
                     }
                 }
             }
         }
-    }
-    Ok(images)
+        Ok(images)
+    })
+    .await
+    .map_err(|e| format!("Failed to scan directory: {}", e))?
 }
 
 use tauri::Manager;
@@ -346,11 +356,6 @@ use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
 };
-
-#[tauri::command]
-async fn read_file_bytes(path: String) -> Result<Vec<u8>, String> {
-    tokio::fs::read(&path).await.map_err(|e| format!("Failed to read file: {}", e))
-}
 
 fn is_safe_extension(path: &str) -> bool {
     let p = std::path::Path::new(path);
@@ -372,13 +377,18 @@ async fn delete_local_wallpaper(path: String) -> Result<(), String> {
 
 #[tauri::command]
 async fn download_and_save_wallpaper(url: String, path: String) -> Result<(), String> {
-    let bytes = reqwest::get(&url)
+    let bytes = http_client()
+        .get(&url)
+        .send()
         .await
         .map_err(|e| format!("Failed to download: {}", e))?
         .bytes()
         .await
         .map_err(|e| format!("Failed to read bytes: {}", e))?
         .to_vec();
+    if let Some(parent) = std::path::Path::new(&path).parent() {
+        tokio::fs::create_dir_all(parent).await.map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
     tokio::fs::write(&path, bytes).await.map_err(|e| format!("Failed to write file: {}", e))
 }
 
@@ -463,166 +473,132 @@ async fn delete_cached_wallpaper(app: tauri::AppHandle, url: String) -> Result<(
 }
 
 #[cfg(target_os = "windows")]
-use winapi::shared::minwindef::{BOOL, LPARAM};
-#[cfg(target_os = "windows")]
 use winapi::shared::windef::HWND;
 #[cfg(target_os = "windows")]
-use std::ptr::null_mut;
+use winapi::shared::minwindef::{BOOL, LPARAM};
 
 #[cfg(target_os = "windows")]
-static mut WORKERW: HWND = null_mut();
+fn wallpaper_host_hwnd() -> HWND {
+    use winapi::um::winuser::{
+        EnumWindows, FindWindowA, FindWindowExA, GetClassNameA, GetParent,
+        IsWindowVisible, SendMessageTimeoutA, SMTO_NORMAL,
+    };
 
-#[cfg(target_os = "windows")]
-unsafe extern "system" fn enum_windows_proc(hwnd: HWND, _: LPARAM) -> BOOL {
-    use winapi::um::winuser::FindWindowExA;
-    let p = FindWindowExA(hwnd, null_mut(), b"SHELLDLL_DefView\0".as_ptr() as *const i8, null_mut());
-    if p != null_mut() {
-        let worker = FindWindowExA(null_mut(), hwnd, b"WorkerW\0".as_ptr() as *const i8, null_mut());
-        if worker != null_mut() {
-            WORKERW = worker;
-        }
+    struct HostScan {
+        progman: HWND,
+        found: HWND,
     }
-    1
-}
 
-#[cfg(target_os = "windows")]
-pub fn get_workerw() -> HWND {
-    use winapi::um::winuser::{EnumWindows, FindWindowA, SendMessageTimeoutA, SMTO_NORMAL};
+    unsafe extern "system" fn find_host_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        let ctx = &mut *(lparam as *mut HostScan);
+        if IsWindowVisible(hwnd) != 0 {
+            let mut class = [0i8; 64];
+            GetClassNameA(hwnd, class.as_mut_ptr(), class.len() as i32);
+            let name = std::ffi::CStr::from_ptr(class.as_ptr()).to_string_lossy();
+            if name == "WorkerW"
+                && (ctx.progman.is_null() || GetParent(hwnd) == ctx.progman)
+                && FindWindowExA(
+                    hwnd,
+                    std::ptr::null_mut(),
+                    b"SHELLDLL_DefView\0".as_ptr() as *const i8,
+                    std::ptr::null_mut(),
+                )
+                .is_null()
+            {
+                ctx.found = hwnd;
+                return 0;
+            }
+        }
+        1
+    }
+
     unsafe {
-        WORKERW = null_mut();
-        let progman = FindWindowA(b"Progman\0".as_ptr() as *const i8, null_mut());
-        if progman != null_mut() {
+        let progman = FindWindowA(b"Progman\0".as_ptr() as *const i8, std::ptr::null_mut());
+        if !progman.is_null() {
             let mut result: usize = 0;
-            SendMessageTimeoutA(
-                progman,
-                0x052C,
-                0,
-                0,
-                SMTO_NORMAL,
-                1000,
-                &mut result,
-            );
-            EnumWindows(Some(enum_windows_proc), 0);
+            SendMessageTimeoutA(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, &mut result);
         }
-
-        if WORKERW != null_mut() { WORKERW } else { progman }
+        for _ in 0..25 {
+            let mut ctx = HostScan { progman, found: std::ptr::null_mut() };
+            EnumWindows(Some(find_host_proc), &mut ctx as *mut HostScan as LPARAM);
+            if !ctx.found.is_null() {
+                return ctx.found;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(40));
+        }
+        progman
     }
 }
 
+#[cfg(target_os = "windows")]
+async fn load_wallpaper_bytes(media_url: &str) -> Result<Vec<u8>, String> {
+    if media_url.starts_with("http://") || media_url.starts_with("https://") {
+        let resp = http_client()
+            .get(media_url)
+            .send()
+            .await
+            .map_err(|e| format!("Download failed: {}", e))?;
+        resp.bytes()
+            .await
+            .map(|b| b.to_vec())
+            .map_err(|e| format!("Read failed: {}", e))
+    } else {
+        let path = media_url
+            .trim_start_matches("asset://localhost/")
+            .trim_start_matches("http://asset.localhost/")
+            .trim_start_matches("https://asset.localhost/");
+        tokio::fs::read(path)
+            .await
+            .map_err(|e| format!("Failed to read local file: {}", e))
+    }
+}
+
+#[cfg(target_os = "windows")]
+fn dispatch_main<F>(app: &tauri::AppHandle, f: F) -> Result<(), String>
+where
+    F: FnOnce() + Send + 'static,
+{
+    app.run_on_main_thread(f).map_err(|e| e.to_string())
+}
 #[tauri::command]
 async fn set_video_wallpaper(
     app: tauri::AppHandle,
     url: String,
     player_url: Option<String>,
 ) -> Result<(), String> {
+    let resolved_url = player_url.clone().unwrap_or_else(|| url.clone());
+    if let Ok(mut guard) = VIDEO_WALLPAPER_URL.lock() {
+        *guard = Some(resolved_url);
+    }
+
     #[cfg(target_os = "windows")]
     {
-        use winapi::um::winuser::{
-            SetParent, SetWindowLongW, SetWindowPos,
-            GWL_STYLE, SWP_NOACTIVATE, SWP_NOZORDER, SWP_SHOWWINDOW, SWP_NOMOVE, SWP_NOSIZE,
-            WS_CHILD, WS_CLIPCHILDREN, WS_CLIPSIBLINGS, WS_VISIBLE,
-        };
-        let window_label = "video_bg";
         let video_url = player_url.unwrap_or_else(|| url.clone());
-        
-        // Always close existing window and recreate fresh to avoid stale state
-        if let Some(old) = app.get_webview_window(window_label) {
-            let _ = old.close();
-            // Small delay to ensure window is fully destroyed
-            tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+
+        let lower = video_url.to_lowercase();
+        if !lower.ends_with(".gif") {
+            return Err("Animated desktop wallpapers currently support GIF files".to_string());
         }
-        
-        let worker_w = get_workerw();
-        if worker_w == null_mut() {
+
+        let bytes = load_wallpaper_bytes(&video_url).await?;
+        let decoded = gif_wallpaper::decode_gif(&bytes)
+            .map_err(|e| format!("Failed to decode animated wallpaper: {}", e))?;
+
+        let host = wallpaper_host_hwnd();
+        if host.is_null() {
             return Err("Could not find the Windows desktop host window".to_string());
         }
-        
-        // Calculate the exact physical bounding box of all monitors
-        let mut min_x = 0;
-        let mut min_y = 0;
-        let mut max_x = 0;
-        let mut max_y = 0;
-        
-        if let Ok(monitors) = app.app_handle().available_monitors() {
-            for (i, monitor) in monitors.iter().enumerate() {
-                let pos = monitor.position();
-                let size = monitor.size();
-                let right = pos.x as i32 + size.width as i32;
-                let bottom = pos.y as i32 + size.height as i32;
-                
-                if i == 0 {
-                    min_x = pos.x as i32;
-                    min_y = pos.y as i32;
-                    max_x = right;
-                    max_y = bottom;
-                } else {
-                    min_x = min_x.min(pos.x as i32);
-                    min_y = min_y.min(pos.y as i32);
-                    max_x = max_x.max(right);
-                    max_y = max_y.max(bottom);
-                }
-            }
-        }
-        
-        let width = if max_x > min_x { max_x - min_x } else { 1920 };
-        let height = if max_y > min_y { max_y - min_y } else { 1080 };
 
-        // Create window
-        let encoded_url: String = url::form_urlencoded::byte_serialize(video_url.as_bytes()).collect();
-        let window = tauri::WebviewWindowBuilder::new(
-            &app,
-            window_label,
-            tauri::WebviewUrl::App(format!("/?videoUrl={}", encoded_url).parse().unwrap())
-        )
-        .title("CozyPixels Video Wallpaper")
-        .decorations(false)
-        .skip_taskbar(true)
-        .visible(true) 
-        .transparent(false) // Fixes DWM freeze on startup!
-        .build()
-        .map_err(|e| e.to_string())?;
-
-        let hwnd = window.hwnd().map_err(|e| e.to_string())?;
-        let hwnd_ptr: HWND = unsafe { std::mem::transmute(hwnd) };
-
-        unsafe {
-            use winapi::um::dwmapi::DwmSetWindowAttribute;
-            let dwmwa_window_corner_preference: u32 = 33;
-            let preference: i32 = 1; // DWMWCP_DONOTROUND
-            DwmSetWindowAttribute(
-                hwnd_ptr, 
-                dwmwa_window_corner_preference, 
-                &preference as *const _ as *const winapi::ctypes::c_void, 
-                std::mem::size_of::<i32>() as u32
-            );
-
-            use winapi::um::winuser::{SetParent, GWL_STYLE, GWL_EXSTYLE, WS_CHILD, WS_VISIBLE, ScreenToClient, MoveWindow};
-            SetParent(hwnd_ptr, worker_w);
-            
-            SetWindowLongW(
-                hwnd_ptr,
-                GWL_STYLE,
-                (WS_CHILD | WS_VISIBLE) as i32,
-            );
-            SetWindowLongW(hwnd_ptr, GWL_EXSTYLE, 0);
-            
-            // Map the physical screen origin (0, 0) to WorkerW's internal client coordinates.
-            // If WorkerW is offset by 8px, this returns (-8, -8), guaranteeing we perfectly cover the screen!
-            let mut pt = winapi::shared::windef::POINT { x: min_x, y: min_y };
-            ScreenToClient(worker_w, &mut pt);
-            
-            // Force the window to perfectly align with the screen, neutralizing ANY WorkerW offsets
-            MoveWindow(hwnd_ptr, pt.x, pt.y, width as i32, height as i32, 1);
-            
-            use winapi::um::winuser::{SetWindowPos, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE, SWP_FRAMECHANGED, SWP_SHOWWINDOW, HWND_BOTTOM};
-            // Final frame update
-            SetWindowPos(
-                hwnd_ptr,
-                HWND_BOTTOM,
-                0, 0, 0, 0,
-                SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE | SWP_FRAMECHANGED | SWP_SHOWWINDOW,
-            );
-        }
+        let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+        let app_for_main = app.clone();
+        let host_id = host as usize;
+        dispatch_main(&app_for_main, move || {
+            let result = unsafe {
+                gif_wallpaper::show(decoded, host_id as winapi::shared::windef::HWND)
+            };
+            let _ = tx.send(result);
+        })?;
+        rx.recv().map_err(|_| "Desktop renderer did not start".to_string())??;
     }
     
     #[cfg(target_os = "macos")]
@@ -651,16 +627,13 @@ async fn set_video_wallpaper(
         
         use cocoa::base::id;
         use objc::{msg_send, sel, sel_impl};
-        use tauri::Manager;
         
         let ns_window = window.ns_window().map_err(|e| e.to_string())? as id;
         
         unsafe {
-            // kCGDesktopWindowLevel is -2147483648
             let desktop_level: i32 = -2147483648; 
             let _: () = msg_send![ns_window, setLevel: desktop_level];
             
-            // NSWindowCollectionBehaviorCanJoinAllSpaces
             let behavior: u64 = 1 << 4; 
             let _: () = msg_send![ns_window, setCollectionBehavior: behavior];
         }
@@ -691,7 +664,6 @@ async fn set_video_wallpaper(
         .map_err(|e| e.to_string())?;
     }
     
-    // For unsupported platforms
     #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     {
         return Err("Video wallpapers are currently only supported on Windows, macOS, and Linux.".to_string());
@@ -706,11 +678,15 @@ async fn copy_local_wallpaper(source: String, dest: String) -> Result<(), String
     Ok(())
 }
 
+#[tauri::command]
+fn get_video_wallpaper_url() -> Result<Option<String>, String> {
+    VIDEO_WALLPAPER_URL.lock().map(|g| g.clone()).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
-            // When a second instance is launched, focus the existing window
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.show();
                 let _ = window.unminimize();
@@ -721,7 +697,6 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_autostart::Builder::new().build())
-        .plugin(tauri_plugin_fs::init())
         .setup(|app| {
             let quit_i = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
             let show_i = MenuItem::with_id(app, "show", "Show CozyPixels", true, None::<&str>)?;
@@ -753,7 +728,6 @@ pub fn run() {
                 .tooltip("CozyPixels")
                 .build(app)?;
 
-            // Hide window on boot if started via autostart
             if std::env::args().any(|arg| arg == "--autostart") {
                 if let Some(window) = app.get_webview_window("main") {
                     let _ = window.hide();
@@ -774,10 +748,8 @@ pub fn run() {
             set_lock_screen,
             start_auto_rotate,
             stop_auto_rotate,
-            get_rotate_status,
             update_rotate_interval,
             scan_local_directory,
-            read_file_bytes,
             delete_local_wallpaper,
             download_and_save_wallpaper,
             copy_local_wallpaper,
@@ -785,6 +757,7 @@ pub fn run() {
             delete_cached_wallpaper,
             set_video_wallpaper,
             sync_all_wallpapers,
+            get_video_wallpaper_url,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

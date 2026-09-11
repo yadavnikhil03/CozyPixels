@@ -2,17 +2,50 @@ name: Release Desktop App
 
 on:
   push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'desktop/**'
-      - 'CHANGELOG.md'
-      - 'scripts/release-notes.mjs'
-      - '.github/workflows/release.yml'
+    tags:
+      - 'app-v*'
+  workflow_dispatch:
 
 jobs:
+  test:
+    name: Test desktop app
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: desktop/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: desktop
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: desktop/src-tauri
+
+      - name: Check Rust backend
+        run: cargo check
+        working-directory: desktop/src-tauri
+
   release:
+    name: Build and release Tauri app
+    needs: test
     permissions:
       contents: write
     strategy:

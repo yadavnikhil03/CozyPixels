@@ -14,7 +14,7 @@ import {
   LuChevronDown, LuChevronUp, LuChevronLeft, LuChevronRight,
   LuFolderPlus, LuTriangleAlert, LuStar, LuMousePointerClick
 } from 'react-icons/lu';
-import './App.css?v=2';
+import './App.css';
 import './premium.css';
 import { SplashScreen } from './components/SplashScreen.jsx';
 import { Toast } from './components/Toast.jsx';
@@ -24,6 +24,7 @@ import { UpdateModal } from './components/UpdateModal.jsx';
 import { ConfirmModal } from './components/ConfirmModal.jsx';
 import { VideoBackgroundPlayer } from './components/VideoBackgroundPlayer.jsx';
 import { getVersion } from '@tauri-apps/api/app';
+import { API_URL, STATIC_URL, MEDIA_EXTENSIONS } from './constants.js';
 
 const isTauri = () => Boolean(window.__TAURI_INTERNALS__);
 const invoke = (...args) => isTauri()
@@ -33,17 +34,42 @@ const listen = (...args) => isTauri()
   ? tauriListen(...args)
   : Promise.resolve(() => {});
 
-
-const STATIC_COMMIT = 'f86b8925c715881b33e50f70f34ef8898851a31e';
-const API_URL = `https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@${STATIC_COMMIT}/frontend/public/wallpapers.json`;
-const STATIC_URL = `https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@${STATIC_COMMIT}/frontend/public`;
-
 export default function App() {
   const params = new URLSearchParams(window.location.search);
-  const videoUrl = params.get('videoUrl');
+  const [videoUrl, setVideoUrl] = useState(params.get('videoUrl'));
+
+  const isVideoWindow = (() => {
+    try {
+      return window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label === 'video_bg';
+    } catch {
+      return false;
+    }
+  })();
+
+  useEffect(() => {
+    if (!isVideoWindow || videoUrl) return;
+    let cancelled = false;
+    const poll = (attempt) => {
+      if (cancelled || attempt >= 25) return;
+      invoke('get_video_wallpaper_url')
+        .then((u) => {
+          if (u && !cancelled) {
+            setVideoUrl(u);
+          }
+        })
+        .catch(() => setTimeout(() => poll(attempt + 1), 300));
+    };
+    poll(0);
+    const id = setInterval(() => poll(0), 300);
+    return () => { cancelled = true; clearInterval(id); };
+  }, [isVideoWindow, videoUrl]);
 
   if (videoUrl) {
     return <VideoBackgroundPlayer initialUrl={videoUrl} />;
+  }
+
+  if (isVideoWindow) {
+    return <div style={{ position: 'fixed', inset: 0, background: 'black' }} />;
   }
 
   const [appVersion, setAppVersion] = useState('');
@@ -59,7 +85,9 @@ export default function App() {
       return [];
     }
   });
-  const [localFolders, setLocalFolders] = useState(() => JSON.parse(localStorage.getItem('cozy_localFolders') || '[]'));
+  const [localFolders, setLocalFolders] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('cozy_localFolders') || '[]'); } catch { return []; }
+  });
   const [customWallpapers, setCustomWallpapers] = useState([]);
   const allWallpapers = useMemo(() => [...customWallpapers, ...wallpapers], [customWallpapers, wallpapers]);
   const categories = useMemo(() => [...new Set(allWallpapers.map(w => w.category))], [allWallpapers]);
@@ -76,7 +104,6 @@ export default function App() {
   }, [allWallpapers, favorites]);
   const [category, setCategory] = useState('All');
   const [search, setSearch] = useState('');
-  const [fetchError, setFetchError] = useState(false);
   const [fetching, setFetching] = useState(() => {
     try {
       const cached = JSON.parse(localStorage.getItem('cozy_wallpapers_catalog') || '[]');
@@ -87,7 +114,6 @@ export default function App() {
   });
   const [defaultDownloadPath, setDefaultDownloadPath] = useState(() => localStorage.getItem('cozy_download_path') || '');
   const [showSplash, setShowSplash] = useState(true);
-  const splashStartRef = useRef(Date.now());
   const fetchAbortRef = useRef(null);
   const hasCachedCatalogRef = useRef(wallpapers.length > 0);
   const deferredSearch = useDeferredValue(search);
@@ -108,7 +134,6 @@ export default function App() {
   const toastQueue = useRef([]);
   const toastTimer = useRef(null);
   const toastIdCounter = useRef(0);
-  const manualRotateRef = useRef(false);
 
   const toastRef = useRef(null);
 
@@ -127,7 +152,6 @@ export default function App() {
   }, []);
 
   const addToast = useCallback((message, type = 'success') => {
-    // Dedup: skip if same message+type already shown or queued
     if (toastRef.current && toastRef.current.message === message && toastRef.current.type === type) return;
     if (toastQueue.current.some(t => t.message === message && t.type === type)) return;
     toastIdCounter.current += 1;
@@ -146,7 +170,6 @@ export default function App() {
   const [autoRotate, setAutoRotate] = useState(() => localStorage.getItem('cozy_autoRotate') === 'true');
   const [rotateInterval, setRotateInterval] = useState(() => parseInt(localStorage.getItem('cozy_rotateInterval')) || 15 * 60 * 1000);
   const [rotateCategory, setRotateCategory] = useState(() => localStorage.getItem('cozy_rotateCategory') || 'All');
-  const [rotateStatus, setRotateStatus] = useState(false);
   const [rotateExpanded, setRotateExpanded] = useState(false);
 
   useEffect(() => {
@@ -184,7 +207,6 @@ export default function App() {
     fetchAbortRef.current?.abort();
     const controller = new AbortController();
     fetchAbortRef.current = controller;
-    setFetchError(false);
     setFetching(!hasCachedCatalogRef.current);
 
     fetch(API_URL, { signal: controller.signal })
@@ -193,15 +215,15 @@ export default function App() {
         if (Array.isArray(d)) { 
           setWallpapers(d); 
           localStorage.setItem('cozy_wallpapers_catalog', JSON.stringify(d));
-          setFetchError(false); 
           const urls = d.map(w => w.path.startsWith('http') ? w.path : `${STATIC_URL}${w.path}`);
-          invoke('sync_all_wallpapers', { urls }).catch(console.error);
+          if (urls.length > 0) {
+            invoke('sync_all_wallpapers', { urls }).catch(console.error);
+          }
         } 
       })
       .catch(e => {
         if (e.name !== 'AbortError') {
           console.error('Failed to fetch wallpapers:', e);
-          setFetchError(!hasCachedCatalogRef.current);
         }
       })
       .finally(() => setFetching(false));
@@ -268,15 +290,11 @@ export default function App() {
   const performUpdate = useCallback(async (manual = false) => {
     if (!updatesEnabled) {
       if (manual) {
-        // create a mock update that simulates a gradual download in dev
         pendingUpdateRef.current = {
           version: appVersion,
           downloadAndInstall: async (onEvent) => {
             onEvent?.({ event: 'Started', data: { contentLength: 100 } });
-            // simulate chunked progress (10 steps)
             for (let i = 1; i <= 10; i++) {
-              // wait a bit to show animation
-              // eslint-disable-next-line no-await-in-loop
               await new Promise(r => setTimeout(r, 180));
               onEvent?.({ event: 'Progress', data: { chunkLength: 10 } });
             }
@@ -303,7 +321,7 @@ export default function App() {
         console.error('Update check failed:', err);
       }
     }
-  }, [showUpdateModal, closeUpdateModal, updatesEnabled]);
+  }, [showUpdateModal, updatesEnabled]);
 
   const handleInstallUpdate = useCallback(async () => {
     const update = pendingUpdateRef.current;
@@ -325,17 +343,15 @@ export default function App() {
         }
       });
       if (updatesEnabled) {
-        // in production, relaunch will restart the app after install
         await relaunch();
       } else {
-        // dev: show installed state briefly then close
         showUpdateModal({ state: 'uptodate', version: appVersion });
         setTimeout(() => closeUpdateModal(), 1200);
       }
     } catch (err) {
       showUpdateModal({ state: 'error', error: String(err) });
     }
-  }, [showUpdateModal, updatesEnabled]);
+  }, [showUpdateModal, updatesEnabled, closeUpdateModal]);
 
   useEffect(() => {
     if (updatesEnabled) performUpdate(false);
@@ -346,77 +362,76 @@ export default function App() {
   }, [performUpdate]);
 
 
-  useEffect(() => {
-    if (autoRotate && rotateStatus) {
-      invoke('update_rotate_interval', { newIntervalMs: rotateInterval })
-        .catch(err => console.error(err));
-    }
-  }, [rotateInterval, rotateStatus, autoRotate]);
+  const rotatePool = useCallback(() => allWallpapers
+    .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
+    .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) })),
+  [allWallpapers, rotateCategory]);
+
+  const rotateCfgRef = useRef(null);
 
   useEffect(() => {
-    if (autoRotate && rotateStatus) {
-      const pool = allWallpapers
-        .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
-      
-      if (pool.length > 0) {
-        invoke('start_auto_rotate', { 
-          intervalMs: rotateInterval, 
-          wallpapers: pool,
-          startIndex: 0,
-          initialDelayMs: rotateInterval
-        }).catch(err => console.error(err));
-      } else {
-        invoke('stop_auto_rotate').catch(err => console.error(err));
-      }
-    }
-  }, [rotateCategory, allWallpapers]);
-
-  useEffect(() => {
-    if (manualRotateRef.current) {
-      manualRotateRef.current = false;
+    if (!autoRotate) {
+      rotateCfgRef.current = null;
+      invoke('stop_auto_rotate').catch(() => {});
       return;
     }
-    if (autoRotate && categoryCounts.All > 0 && !rotateStatus) {
-      const pool = allWallpapers
-        .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
-      if (pool.length) {
-        let startIndex = 0;
-        let initialDelayMs = rotateInterval;
-        
-        const lastName = localStorage.getItem('cozy_lastRotationName');
-        const lastTime = parseInt(localStorage.getItem('cozy_lastRotationTime'));
-        
-        if (lastName) {
-          const idx = pool.findIndex(w => w.name === lastName);
-          if (idx !== -1) startIndex = idx;
-        }
-        
-        if (lastTime) {
-          const elapsed = Date.now() - lastTime;
-          initialDelayMs = Math.max(0, rotateInterval - elapsed);
-        }
 
-        invoke('start_auto_rotate', { 
-          intervalMs: rotateInterval, 
-          wallpapers: pool,
-          startIndex,
-          initialDelayMs
-        })
-          .then(() => {
-            setRotateStatus(true);
-          })
-          .catch(() => setAutoRotate(false));
+    const pool = rotatePool();
+    if (!pool.length) {
+      rotateCfgRef.current = null;
+      invoke('stop_auto_rotate').catch(() => {});
+      return;
+    }
+
+    const signature = `${rotateCategory}|${pool.length}|${pool[0].name}`;
+    const running = rotateCfgRef.current !== null;
+
+    if (running && rotateCfgRef.current.signature === signature) {
+      if (rotateCfgRef.current.interval !== rotateInterval) {
+        invoke('update_rotate_interval', { newIntervalMs: rotateInterval }).catch(() => {});
+        rotateCfgRef.current.interval = rotateInterval;
+      }
+      return;
+    }
+
+    let startIndex = 0;
+    let initialDelayMs = rotateInterval;
+    if (!running) {
+      const lastName = localStorage.getItem('cozy_lastRotationName');
+      const lastTime = parseInt(localStorage.getItem('cozy_lastRotationTime'));
+      if (lastName) {
+        const idx = pool.findIndex(w => w.name === lastName);
+        if (idx !== -1) startIndex = idx;
+      }
+      if (lastTime) {
+        const elapsed = Date.now() - lastTime;
+        initialDelayMs = Math.max(0, rotateInterval - elapsed);
       }
     }
-  }, [allWallpapers, autoRotate, rotateCategory, rotateInterval, rotateStatus, addToast]);
+
+    invoke('start_auto_rotate', { intervalMs: rotateInterval, wallpapers: pool, startIndex, initialDelayMs })
+      .then(() => {
+        rotateCfgRef.current = { signature, interval: rotateInterval };
+      })
+      .catch(err => {
+        console.error('Failed to start auto-rotate:', err);
+        setAutoRotate(false);
+        rotateCfgRef.current = null;
+      });
+  }, [autoRotate, rotateInterval, rotateCategory, rotatePool]);
 
   useEffect(() => {
     const u = listen('wallpaper-changed', e => {
       localStorage.setItem('cozy_lastRotationName', e.payload);
       localStorage.setItem('cozy_lastRotationTime', Date.now().toString());
       addToast('Rotated to next wallpaper', 'rotate');
+    });
+    return () => { u.then(fn => fn()); };
+  }, [addToast]);
+
+  useEffect(() => {
+    const u = listen('video-wallpaper-status', e => {
+      addToast(String(e.payload), 'info');
     });
     return () => { u.then(fn => fn()); };
   }, [addToast]);
@@ -486,18 +501,18 @@ export default function App() {
     const url = wallpaper.path.startsWith('http') || wallpaper.path.startsWith('asset://') 
       ? wallpaper.path 
       : `${STATIC_URL}${wallpaper.path}`;
-      let filename = wallpaper.name || 'wallpaper';
-  
-      let extension = wallpaper.path.split('.').pop()?.toLowerCase();
-      if (extension && extension.includes('?')) extension = extension.split('?')[0];
-      if (!['jpg', 'jpeg', 'png', 'webp', 'avif'].includes(extension)) {
-        extension = 'jpg';
-      }
-      
-      const filenameExt = filename.split('.').pop()?.toLowerCase();
-      if (!['jpg', 'jpeg', 'png', 'webp', 'avif'].includes(filenameExt)) {
-        filename = `${filename}.${extension}`;
-      }
+    let filename = wallpaper.name || 'wallpaper';
+
+    let extension = wallpaper.path.split('.').pop()?.toLowerCase();
+    if (extension && extension.includes('?')) extension = extension.split('?')[0];
+    if (!MEDIA_EXTENSIONS.includes(extension)) {
+      extension = 'jpg';
+    }
+    
+    const filenameExt = filename.split('.').pop()?.toLowerCase();
+    if (!MEDIA_EXTENSIONS.includes(filenameExt)) {
+      filename = `${filename}.${extension}`;
+    }
 
     try {
         let filePath;
@@ -509,7 +524,7 @@ export default function App() {
           filePath = await save({
             defaultPath: filename,
             filters: [{
-              name: 'Image',
+              name: 'Wallpaper',
               extensions: [extension]
             }]
           });
@@ -539,32 +554,16 @@ export default function App() {
   const handleToggleRotate = useCallback(async () => {
     if (autoRotate) {
       setAutoRotate(false);
-      setRotateStatus(false);
-      try { await invoke('stop_auto_rotate'); await disable(); } catch (e) { console.error('Stop rotate error:', e); }
+      try { await disable(); } catch (e) { console.error('Autostart disable error:', e); }
       addToast('Auto-rotate off', 'rotate');
     } else {
-      manualRotateRef.current = true;
-      setAutoRotate(true);
-      const pool = allWallpapers
-        .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
+      const pool = rotatePool();
       if (!pool.length) { addToast('No wallpapers in this category', 'error'); return; }
-      try {
-        await invoke('start_auto_rotate', { 
-          intervalMs: rotateInterval, 
-          wallpapers: pool,
-          startIndex: 0,
-          initialDelayMs: rotateInterval
-        });
-        await enable();
-        setRotateStatus(true);
-        addToast(`Auto-rotate on — every ${rotateInterval / 60000}min`, 'rotate');
-      } catch (err) {
-        addToast(`${err}`, 'error');
-        setAutoRotate(false);
-      }
+      setAutoRotate(true);
+      try { await enable(); } catch (e) { console.error('Autostart enable error:', e); }
+      addToast(`Auto-rotate on — every ${rotateInterval / 60000}min`, 'rotate');
     }
-  }, [autoRotate, allWallpapers, rotateInterval, rotateCategory, addToast]);
+  }, [autoRotate, rotateInterval, rotatePool, addToast]);
 
   const filtered = useMemo(() => {
     let base = allWallpapers;
@@ -660,27 +659,6 @@ export default function App() {
     });
   }, []);
 
-  const prevCustomWallpapersLength = useRef(customWallpapers.length);
-  useEffect(() => {
-    if (autoRotate && customWallpapers.length < prevCustomWallpapersLength.current) {
-      const pool = allWallpapers
-        .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-        .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) }));
-      
-      if (pool.length > 0) {
-        invoke('start_auto_rotate', { 
-          intervalMs: rotateInterval, 
-          wallpapers: pool,
-          startIndex: 0,
-          initialDelayMs: rotateInterval
-        }).catch(console.error);
-      } else {
-        invoke('stop_auto_rotate').catch(console.error);
-      }
-    }
-    prevCustomWallpapersLength.current = customWallpapers.length;
-  }, [customWallpapers.length, autoRotate, allWallpapers, rotateCategory, rotateInterval]);
-
   useEffect(() => {
     const uNext = listen('tray-next-wallpaper', () => {
       if (filtered.length > 0) {
@@ -716,7 +694,7 @@ export default function App() {
 
   return (
     <div className="app">
-      
+      <SplashScreen visible={showSplash} />
       <aside className="sidebar">
         <div className="logo">
           {!showSplash && (
@@ -938,9 +916,9 @@ export default function App() {
         </div>
 
         <div ref={galleryRef} className="gallery" style={{ position: 'relative' }}>
-          {displayedWallpapers.map((w, i) => (
+          {displayedWallpapers.map((w) => (
             <WallpaperCard
-              key={`${w.category}-${w.name}-${i}`}
+              key={w.realPath || w.path}
               wallpaper={w}
               onSetWallpaper={handleSetWallpaper}
               onPreview={handlePreview}

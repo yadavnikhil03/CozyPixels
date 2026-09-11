@@ -4,8 +4,7 @@ import { LuChevronLeft, LuChevronRight, LuRefreshCw, LuMonitor, LuDownload, LuX 
 import { useFocusTrap } from '../useFocusTrap.js';
 import { formatWallpaperName } from '../utils.js';
 import { useCachedImage } from '../useCachedImage.js';
-
-const STATIC_URL = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@f86b8925c715881b33e50f70f34ef8898851a31e/frontend/public';
+import { STATIC_URL } from '../constants.js';
 
 export const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, onDownload, setting, settingLock, onNext, onPrev, hasNext, hasPrev }) => {
   const [direction, setDirection] = useState(0);
@@ -27,7 +26,7 @@ export const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, 
 
   useEffect(() => setPreviewFallback(false), [wallpaper?.path]);
 
-  const baseImageUrl = wallpaper?.path?.startsWith('http') || wallpaper?.path?.startsWith('cozy://') 
+  const baseImageUrl = wallpaper?.path?.startsWith('http') || wallpaper?.path?.startsWith('asset://') 
     ? wallpaper.path 
     : `${STATIC_URL}${wallpaper?.path}`;
     

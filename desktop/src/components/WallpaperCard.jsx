@@ -2,8 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { LuImage, LuRefreshCw, LuMonitor, LuDownload, LuStar, LuTrash, LuPlay } from 'react-icons/lu';
 import { formatWallpaperName } from '../utils.js';
 import { useCachedImage } from '../useCachedImage.js';
-
-const STATIC_URL = 'https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@f86b8925c715881b33e50f70f34ef8898851a31e/frontend/public';
+import { STATIC_URL } from '../constants.js';
 
 export const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview, onDownload, setting, isFavorite, onToggleFavorite, onDelete, selectionMode, isSelected, onToggleSelect }) => {
   const [loaded, setLoaded] = useState(false);
@@ -33,11 +32,9 @@ export const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview,
 
   const displayName = useMemo(() => formatWallpaperName(wallpaper.name), [wallpaper.name]);
 
-  // Security: Enhanced file type validation based on extension mapping
   const isVideo = useMemo(() => {
     const p = wallpaper.path.toLowerCase();
 
-    // Explicit extension checks
     const isMp4 = p.endsWith('.mp4');
     const isWebm = p.endsWith('.webm');
     const isMkv = p.endsWith('.mkv');

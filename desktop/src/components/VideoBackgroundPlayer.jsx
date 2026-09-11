@@ -1,10 +1,8 @@
-import React, { useEffect } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import React, { useEffect, useState } from 'react';
 
 export const VideoBackgroundPlayer = ({ initialUrl }) => {
-  const [videoUrl, setVideoUrl] = React.useState(initialUrl);
+  const [error, setError] = useState('');
 
-  // Force the html/body to be edge-to-edge with no margins or background color
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -21,41 +19,33 @@ export const VideoBackgroundPlayer = ({ initialUrl }) => {
     return () => { document.head.removeChild(style); };
   }, []);
 
-  useEffect(() => {
-    let unlisten;
-    const setupListener = async () => {
-      unlisten = await listen('change-video', (event) => {
-        if (event.payload) {
-          setVideoUrl(event.payload);
-        }
-      });
-    };
-    setupListener();
-
-    return () => {
-      if (unlisten) unlisten();
-    };
-  }, []);
-
-  if (!videoUrl) return null;
+  if (!initialUrl) return null;
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', backgroundColor: 'black', margin: 0 }}>
-      {videoUrl.toLowerCase().endsWith('.gif') ? (
-        <img 
-          src={videoUrl} 
+      {initialUrl.toLowerCase().endsWith('.gif') ? (
+        <img
+          src={initialUrl}
+          ref={imgRef}
+          onError={() => setError(initialUrl)}
           style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
           alt="Wallpaper"
         />
       ) : (
-        <video 
-          src={videoUrl} 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
+        <video
+          src={initialUrl}
+          autoPlay
+          loop
+          muted
+          playsInline
+          onError={() => setError(initialUrl)}
           style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
         />
+      )}
+      {error && (
+        <div style={{ position: 'fixed', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'black', color: '#ff6b6b', fontFamily: 'monospace', fontSize: 13, padding: 16, textAlign: 'center', wordBreak: 'break-all' }}>
+          Failed to load: {error}
+        </div>
       )}
     </div>
   );

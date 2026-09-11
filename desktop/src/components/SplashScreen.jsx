@@ -4,7 +4,7 @@ import { LuSparkles } from 'react-icons/lu';
 
 export const SplashScreen = ({ visible }) => {
   const circleRef = useRef(null);
-  const CIRCUMFERENCE = 2 * Math.PI * 44; // r=44
+  const CIRCUMFERENCE = 2 * Math.PI * 44;
 
   return (
     <AnimatePresence>
@@ -44,7 +44,6 @@ export const SplashScreen = ({ visible }) => {
               </motion.svg>
               <motion.div
                 className="splash__icon"
-                
                 initial={{ scale: 0, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.25, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
@@ -54,8 +53,7 @@ export const SplashScreen = ({ visible }) => {
             </motion.div>
 
             <motion.h1
-              className="splash__title"
-              
+className="splash__title"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}

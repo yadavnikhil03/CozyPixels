@@ -1,11 +1,12 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { LuCheck, LuX, LuMonitor, LuRefreshCw } from 'react-icons/lu';
+import { LuCheck, LuX, LuMonitor, LuRefreshCw, LuInfo } from 'react-icons/lu';
 
 export const Toast = ({ message, type }) => {
   const iconMap = {
     success: { icon: LuCheck, color: '#30D158' },
     error: { icon: LuX, color: '#FF453A' },
+    info: { icon: LuInfo, color: '#0A84FF' },
     wallpaper: { icon: LuMonitor, color: '#5E5CE6' },
     rotate: { icon: LuRefreshCw, color: '#0A84FF' },
   };
