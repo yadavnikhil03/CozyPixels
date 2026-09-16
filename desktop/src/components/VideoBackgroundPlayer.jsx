@@ -1,7 +1,39 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { invoke as tauriInvoke } from '@tauri-apps/api/core';
 
-export const VideoBackgroundPlayer = ({ initialUrl }) => {
+const invoke = (...args) =>
+  window.__TAURI_INTERNALS__ ? tauriInvoke(...args) : Promise.reject(new Error('Not in Tauri'));
+
+export const VideoBackgroundPlayer = ({ initialUrl, isVideoWindow = false }) => {
+  const [url, setUrl] = useState(initialUrl || null);
   const [error, setError] = useState('');
+  const imgRef = useRef(null);
+
+  // When running as the dedicated video_bg window, poll the backend for the URL
+  // if it was not passed via query string. This handles the case where the window
+  // is opened before the Rust command has stored the URL.
+  useEffect(() => {
+    if (!isVideoWindow || url) return;
+    let cancelled = false;
+    let attempts = 0;
+    const MAX_ATTEMPTS = 25;
+
+    const poll = () => {
+      if (cancelled || attempts >= MAX_ATTEMPTS) return;
+      attempts += 1;
+      invoke('get_video_wallpaper_url')
+        .then((u) => {
+          if (u && !cancelled) setUrl(u);
+          else if (!u && !cancelled && attempts < MAX_ATTEMPTS) setTimeout(poll, 300);
+        })
+        .catch(() => {
+          if (!cancelled && attempts < MAX_ATTEMPTS) setTimeout(poll, 300);
+        });
+    };
+
+    poll();
+    return () => { cancelled = true; };
+  }, [isVideoWindow, url]);
 
   useEffect(() => {
     const style = document.createElement('style');
@@ -19,27 +51,31 @@ export const VideoBackgroundPlayer = ({ initialUrl }) => {
     return () => { document.head.removeChild(style); };
   }, []);
 
-  if (!initialUrl) return null;
+  if (!url) {
+    return <div style={{ position: 'fixed', inset: 0, background: 'black' }} />;
+  }
+
+  const isGif = url.toLowerCase().endsWith('.gif');
 
   return (
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', backgroundColor: 'black', margin: 0 }}>
-      {initialUrl.toLowerCase().endsWith('.gif') ? (
+      {isGif ? (
         <img
-          src={initialUrl}
           ref={imgRef}
-          onError={() => setError(initialUrl)}
-          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
+          src={url}
+          onError={() => setError(url)}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0 }}
           alt="Wallpaper"
         />
       ) : (
         <video
-          src={initialUrl}
+          src={url}
           autoPlay
           loop
           muted
           playsInline
-          onError={() => setError(initialUrl)}
-          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0, transform: 'scale(1.01)' }}
+          onError={() => setError(url)}
+          style={{ display: 'block', width: '100%', height: '100%', objectFit: 'cover', margin: 0 }}
         />
       )}
       {error && (

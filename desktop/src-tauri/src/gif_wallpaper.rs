@@ -181,21 +181,35 @@ pub unsafe fn show(decoded: DecodedGif, host: HWND) -> Result<(), String> {
     wc.lpszClassName = GIF_CLASS.as_ptr();
     RegisterClassExW(&wc);
 
-    let mut rc: RECT = std::mem::zeroed();
-    GetClientRect(host, &mut rc);
-    let w = rc.right;
-    let h = rc.bottom;
-    if w <= 0 || h <= 0 {
-        return Err("Desktop host has an invalid size".to_string());
-    }
+    // Use the virtual screen dimensions so the GIF covers all connected monitors.
+    // SM_CXVIRTUALSCREEN / SM_CYVIRTUALSCREEN give the total width/height of the
+    // bounding rectangle that encompasses all monitors.
+    // SM_XVIRTUALSCREEN / SM_YVIRTUALSCREEN give the top-left corner offset
+    // (negative when a monitor is to the left or above the primary).
+    let vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
+    let vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
+    let vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    let vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+    // Fallback to the host client rect if virtual screen metrics are unavailable.
+    let (w, h, x, y) = if vw > 0 && vh > 0 {
+        (vw, vh, vx, vy)
+    } else {
+        let mut rc: RECT = std::mem::zeroed();
+        GetClientRect(host, &mut rc);
+        if rc.right <= 0 || rc.bottom <= 0 {
+            return Err("Desktop host has an invalid size".to_string());
+        }
+        (rc.right, rc.bottom, 0, 0)
+    };
 
     let hwnd = CreateWindowExW(
         0,
         GIF_CLASS.as_ptr(),
         std::ptr::null(),
         WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN,
-        0,
-        0,
+        x,
+        y,
         w,
         h,
         host,
@@ -220,7 +234,7 @@ pub unsafe fn show(decoded: DecodedGif, host: HWND) -> Result<(), String> {
     });
     build_dib(&mut st)?;
 
-let delay = st.delays[0].clamp(10, 1000);
+    let delay = st.delays[0].clamp(10, 1000);
     let multi = st.frames.len() > 1;
     *state()
         .lock()

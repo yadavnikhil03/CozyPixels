@@ -27,6 +27,8 @@ static ROTATE_RUNNING: AtomicBool = AtomicBool::new(false);
 static ROTATE_INTERVAL: AtomicU64 = AtomicU64::new(900000);
 static ROTATE_GENERATION: AtomicU64 = AtomicU64::new(0);
 static VIDEO_WALLPAPER_URL: Mutex<Option<String>> = Mutex::new(None);
+static SYNC_RUNNING: AtomicBool = AtomicBool::new(true);
+static WALLPAPER_MUTEX: Mutex<()> = Mutex::new(());
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct WallpaperInfo {
@@ -39,19 +41,31 @@ async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, Str
     #[cfg(target_os = "windows")]
     {
         if let Some(video_window) = app.get_webview_window("video_bg") {
-            video_window
-                .destroy()
-                .map_err(|e| format!("Failed to stop live wallpaper: {}", e))?;
+            if let Err(e) = video_window.destroy() {
+                eprintln!("[CozyPixels] Warning: failed to stop live wallpaper window: {}", e);
+            }
         }
         let app_for_main = app.clone();
-        if dispatch_main(&app_for_main, || unsafe { gif_wallpaper::destroy(); }).is_err() {
-            return Err("Failed to stop animated wallpaper".to_string());
+        if let Err(e) = dispatch_main(&app_for_main, || unsafe { gif_wallpaper::destroy(); }) {
+            // Non-fatal: log but continue — the GIF window may already be gone.
+            eprintln!("[CozyPixels] Warning: failed to dispatch GIF cleanup: {}", e);
         }
     }
 
     if !url.starts_with("http://") && !url.starts_with("https://") {
         set_wallpaper_os(&url)?;
-        return Ok(format!("Local wallpaper set"));
+        return Ok("Local wallpaper set".to_string());
+    }
+
+    // Check the content-addressable cache first to avoid redundant downloads.
+    if let Ok(cache_dir) = get_cache_dir(&app) {
+        let cached_path = cache_file_path(&cache_dir, &url);
+        if cached_path.exists() {
+            if let Some(path_str) = cached_path.to_str() {
+                set_wallpaper_os(path_str)?;
+                return Ok("Wallpaper set from cache".to_string());
+            }
+        }
     }
 
     let temp_dir = std::env::temp_dir();
@@ -62,6 +76,7 @@ async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, Str
         .to_string();
     let temp_path = temp_dir.join(format!("cozypixels_{}", filename));
 
+    // Clean up other cached temp wallpapers to avoid unbounded temp dir growth.
     if let Ok(entries) = std::fs::read_dir(&temp_dir) {
         for entry in entries.flatten() {
             if let Some(name) = entry.file_name().to_str() {
@@ -74,11 +89,8 @@ async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, Str
         }
     }
 
-    let url_clone = url.clone();
-    let path_clone = temp_path.clone();
-
     let response = http_client()
-        .get(&url_clone)
+        .get(&url)
         .send()
         .await
         .map_err(|e| format!("Download failed: {}", e))?;
@@ -86,26 +98,54 @@ async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, Str
         .bytes()
         .await
         .map_err(|e| format!("Read failed: {}", e))?;
-    tokio::fs::write(&path_clone, &bytes)
+    tokio::fs::write(&temp_path, &bytes)
         .await
         .map_err(|e| format!("Write failed: {}", e))?;
 
     let path_str = temp_path.to_str().ok_or("Invalid temp path")?.to_string();
-
-    set_wallpaper_os(&path_str)?;
+    {
+        let _guard = WALLPAPER_MUTEX.lock().unwrap();
+        set_wallpaper_os(&path_str)?;
+    }
 
     Ok(format!("Wallpaper set: {}", filename))
 }
 
+fn normalize_local_path(path: &str) -> String {
+    let mut normalized = path
+        .trim_start_matches("asset://localhost/")
+        .trim_start_matches("asset://localhost")
+        .trim_start_matches("http://asset.localhost/")
+        .trim_start_matches("https://asset.localhost/")
+        .to_string();
+
+    #[cfg(target_os = "windows")]
+    {
+        if normalized.starts_with('/') && normalized.len() >= 3 && normalized.chars().nth(2) == Some(':') {
+            normalized = normalized[1..].to_string();
+        }
+        normalized = normalized.replace("%20", " ");
+        normalized = normalized.replace('/', "\\");
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        normalized = normalized.replace("%20", " ");
+    }
+
+    normalized
+}
+
 fn set_wallpaper_os(path: &str) -> Result<(), String> {
+    let normalized_path = normalize_local_path(path);
+
     #[cfg(target_os = "windows")]
     {
         use std::ffi::OsStr;
         use std::iter::once;
         use std::os::windows::ffi::OsStrExt;
 
-        let path_str = path.replace('/', "\\");
-        let wide: Vec<u16> = OsStr::new(&path_str).encode_wide().chain(once(0)).collect();
+        let wide: Vec<u16> = OsStr::new(&normalized_path).encode_wide().chain(once(0)).collect();
 
         let result = unsafe {
             winapi::um::winuser::SystemParametersInfoW(
@@ -124,7 +164,7 @@ fn set_wallpaper_os(path: &str) -> Result<(), String> {
 
     #[cfg(target_os = "macos")]
     {
-        let escaped_path = path.replace("\"", "\\\"");
+        let escaped_path = normalized_path.replace("\"", "\\\"");
         let script = format!(
             r#"tell application "System Events" to set picture of every desktop to POSIX file "{}""#,
             escaped_path
@@ -143,7 +183,7 @@ fn set_wallpaper_os(path: &str) -> Result<(), String> {
 
     #[cfg(target_os = "linux")]
     {
-        let escaped_path = path.replace("'", "'\\''");
+        let escaped_path = normalized_path.replace("'", "'\\''");
         let gnome = std::process::Command::new("gsettings")
             .args(&[
                 "set",
@@ -291,23 +331,32 @@ async fn start_auto_rotate(
 
                 if temp_path.exists() {
                     if let Some(path_str) = temp_path.to_str() {
-                        let _ = set_wallpaper_os(path_str);
-                        let _ = window.emit("wallpaper-changed", &name);
+                        if ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) && ROTATE_GENERATION.load(std::sync::atomic::Ordering::SeqCst) == generation {
+                            let _guard = WALLPAPER_MUTEX.lock().unwrap();
+                            let _ = set_wallpaper_os(path_str);
+                            let _ = window.emit("wallpaper-changed", &name);
+                        }
                     }
                 } else {
                     if let Ok(response) = http_client().get(&url).send().await {
                         if let Ok(bytes) = response.bytes().await {
                             let _ = tokio::fs::write(&temp_path, &bytes).await;
                             if let Some(path_str) = temp_path.to_str() {
-                                let _ = set_wallpaper_os(path_str);
-                                let _ = window.emit("wallpaper-changed", &name);
+                                if ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) && ROTATE_GENERATION.load(std::sync::atomic::Ordering::SeqCst) == generation {
+                                    let _guard = WALLPAPER_MUTEX.lock().unwrap();
+                                    let _ = set_wallpaper_os(path_str);
+                                    let _ = window.emit("wallpaper-changed", &name);
+                                }
                             }
                         }
                     }
                 }
             } else {
-                let _ = set_wallpaper_os(&url);
-                let _ = window.emit("wallpaper-changed", &name);
+                if ROTATE_RUNNING.load(std::sync::atomic::Ordering::SeqCst) && ROTATE_GENERATION.load(std::sync::atomic::Ordering::SeqCst) == generation {
+                    let _guard = WALLPAPER_MUTEX.lock().unwrap();
+                    let _ = set_wallpaper_os(&url);
+                    let _ = window.emit("wallpaper-changed", &name);
+                }
             }
         }
     });
@@ -326,19 +375,40 @@ fn update_rotate_interval(new_interval_ms: u64) {
     ROTATE_INTERVAL.store(new_interval_ms.max(60_000), std::sync::atomic::Ordering::SeqCst);
 }
 
+fn is_supported_media(name_lower: &str) -> bool {
+    name_lower.ends_with(".jpg") || name_lower.ends_with(".jpeg") || name_lower.ends_with(".png") || name_lower.ends_with(".webp") || name_lower.ends_with(".gif") || name_lower.ends_with(".bmp") || name_lower.ends_with(".mp4") || name_lower.ends_with(".webm") || name_lower.ends_with(".mkv")
+}
+
 #[tauri::command]
 async fn scan_local_directory(path: String) -> Result<Vec<String>, String> {
     tokio::task::spawn_blocking(move || {
         let mut images = Vec::new();
-        let entries = std::fs::read_dir(&path).map_err(|e| format!("Failed to read dir: {}", e))?;
-        for entry in entries.flatten() {
-            if let Ok(file_type) = entry.file_type() {
-                if file_type.is_file() {
-                    if let Some(name) = entry.file_name().to_str() {
-                        let name_lower = name.to_lowercase();
-                        if name_lower.ends_with(".jpg") || name_lower.ends_with(".jpeg") || name_lower.ends_with(".png") || name_lower.ends_with(".webp") || name_lower.ends_with(".gif") || name_lower.ends_with(".bmp") || name_lower.ends_with(".mp4") || name_lower.ends_with(".webm") || name_lower.ends_with(".mkv") {
-                            if let Some(path_str) = entry.path().to_str() {
-                                images.push(path_str.to_string());
+        if let Ok(entries) = std::fs::read_dir(&path) {
+            for entry in entries.flatten() {
+                if let Ok(file_type) = entry.file_type() {
+                    if file_type.is_file() {
+                        if let Some(name) = entry.file_name().to_str() {
+                            if is_supported_media(&name.to_lowercase()) {
+                                if let Some(path_str) = entry.path().to_str() {
+                                    images.push(path_str.to_string());
+                                }
+                            }
+                        }
+                    } else if file_type.is_dir() {
+                        // One-level recursive scan
+                        if let Ok(sub_entries) = std::fs::read_dir(entry.path()) {
+                            for sub_entry in sub_entries.flatten() {
+                                if let Ok(sub_type) = sub_entry.file_type() {
+                                    if sub_type.is_file() {
+                                        if let Some(name) = sub_entry.file_name().to_str() {
+                                            if is_supported_media(&name.to_lowercase()) {
+                                                if let Some(path_str) = sub_entry.path().to_str() {
+                                                    images.push(path_str.to_string());
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -368,10 +438,21 @@ fn is_safe_extension(path: &str) -> bool {
 }
 
 #[tauri::command]
-async fn delete_local_wallpaper(path: String) -> Result<(), String> {
+async fn delete_local_wallpaper(path: String, allowed_folders: Vec<String>) -> Result<(), String> {
     if !is_safe_extension(&path) {
         return Err("Invalid file extension or path".to_string());
     }
+
+    let path_obj = std::path::Path::new(&path);
+    let is_allowed = allowed_folders.iter().any(|folder| {
+        let folder_path = std::path::Path::new(folder);
+        path_obj.starts_with(folder_path)
+    });
+
+    if !is_allowed {
+        return Err("Cannot delete: file is not within an allowed local directory".to_string());
+    }
+
     tokio::fs::remove_file(&path).await.map_err(|e| format!("Failed to delete file: {}", e))
 }
 
@@ -440,11 +521,14 @@ async fn sync_all_wallpapers(app: tauri::AppHandle, urls: Vec<String>) -> Result
             let cache_dir = cache_dir.clone();
             tasks.spawn(async move {
                 let Ok(_permit) = semaphore.acquire_owned().await else { return };
+                if !SYNC_RUNNING.load(std::sync::atomic::Ordering::SeqCst) { return; }
                 let file_path = cache_file_path(&cache_dir, &url);
                 if file_path.exists() { return; }
                 if let Ok(response) = http_client().get(&url).send().await {
                     if response.status().is_success() {
+                        if !SYNC_RUNNING.load(std::sync::atomic::Ordering::SeqCst) { return; }
                         if let Ok(bytes) = response.bytes().await {
+                            if !SYNC_RUNNING.load(std::sync::atomic::Ordering::SeqCst) { return; }
                             let temp_path = file_path.with_extension("download");
                             if tokio::fs::write(&temp_path, bytes).await.is_ok() {
                                 let _ = tokio::fs::rename(temp_path, file_path).await;
@@ -543,11 +627,8 @@ async fn load_wallpaper_bytes(media_url: &str) -> Result<Vec<u8>, String> {
             .map(|b| b.to_vec())
             .map_err(|e| format!("Read failed: {}", e))
     } else {
-        let path = media_url
-            .trim_start_matches("asset://localhost/")
-            .trim_start_matches("http://asset.localhost/")
-            .trim_start_matches("https://asset.localhost/");
-        tokio::fs::read(path)
+        let path = normalize_local_path(media_url);
+        tokio::fs::read(&path)
             .await
             .map_err(|e| format!("Failed to read local file: {}", e))
     }
@@ -708,6 +789,7 @@ pub fn run() {
                 .menu(&menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "quit" => {
+                        SYNC_RUNNING.store(false, std::sync::atomic::Ordering::SeqCst);
                         app.exit(0);
                     }
                     "show" => {

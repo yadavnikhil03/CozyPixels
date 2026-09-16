@@ -38,6 +38,9 @@ export default defineConfig(async () => ({
           if (id.includes("node_modules/motion")) {
             return "motion";
           }
+          if (id.includes("node_modules/react-icons/")) {
+            return "icons";
+          }
         },
       },
     },

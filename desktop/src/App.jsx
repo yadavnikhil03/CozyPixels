@@ -22,7 +22,7 @@ import { WallpaperCard } from './components/WallpaperCard.jsx';
 import { Lightbox } from './components/Lightbox.jsx';
 import { UpdateModal } from './components/UpdateModal.jsx';
 import { ConfirmModal } from './components/ConfirmModal.jsx';
-import { VideoBackgroundPlayer } from './components/VideoBackgroundPlayer.jsx';
+
 import { getVersion } from '@tauri-apps/api/app';
 import { API_URL, STATIC_URL, MEDIA_EXTENSIONS } from './constants.js';
 
@@ -35,42 +35,6 @@ const listen = (...args) => isTauri()
   : Promise.resolve(() => {});
 
 export default function App() {
-  const params = new URLSearchParams(window.location.search);
-  const [videoUrl, setVideoUrl] = useState(params.get('videoUrl'));
-
-  const isVideoWindow = (() => {
-    try {
-      return window.__TAURI_INTERNALS__?.metadata?.currentWindow?.label === 'video_bg';
-    } catch {
-      return false;
-    }
-  })();
-
-  useEffect(() => {
-    if (!isVideoWindow || videoUrl) return;
-    let cancelled = false;
-    const poll = (attempt) => {
-      if (cancelled || attempt >= 25) return;
-      invoke('get_video_wallpaper_url')
-        .then((u) => {
-          if (u && !cancelled) {
-            setVideoUrl(u);
-          }
-        })
-        .catch(() => setTimeout(() => poll(attempt + 1), 300));
-    };
-    poll(0);
-    const id = setInterval(() => poll(0), 300);
-    return () => { cancelled = true; clearInterval(id); };
-  }, [isVideoWindow, videoUrl]);
-
-  if (videoUrl) {
-    return <VideoBackgroundPlayer initialUrl={videoUrl} />;
-  }
-
-  if (isVideoWindow) {
-    return <div style={{ position: 'fixed', inset: 0, background: 'black' }} />;
-  }
 
   const [appVersion, setAppVersion] = useState('');
   useEffect(() => {
@@ -362,10 +326,18 @@ export default function App() {
   }, [performUpdate]);
 
 
-  const rotatePool = useCallback(() => allWallpapers
-    .filter(w => rotateCategory === 'All' || w.category === rotateCategory)
-    .map(w => ({ name: w.name, url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`) })),
-  [allWallpapers, rotateCategory]);
+  const rotatePool = useCallback(() => {
+    let pool = allWallpapers;
+    if (rotateCategory === 'Favorites') {
+      pool = pool.filter(w => favorites.includes(w.path));
+    } else if (rotateCategory !== 'All') {
+      pool = pool.filter(w => w.category === rotateCategory);
+    }
+    return pool.map(w => ({
+      name: w.name,
+      url: w.realPath || (w.path.startsWith('http') || w.path.startsWith('asset://') ? w.path : `${STATIC_URL}${w.path}`)
+    }));
+  }, [allWallpapers, rotateCategory, favorites]);
 
   const rotateCfgRef = useRef(null);
 
@@ -554,16 +526,16 @@ export default function App() {
   const handleToggleRotate = useCallback(async () => {
     if (autoRotate) {
       setAutoRotate(false);
-      try { await disable(); } catch (e) { console.error('Autostart disable error:', e); }
       addToast('Auto-rotate off', 'rotate');
     } else {
       const pool = rotatePool();
       if (!pool.length) { addToast('No wallpapers in this category', 'error'); return; }
       setAutoRotate(true);
-      try { await enable(); } catch (e) { console.error('Autostart enable error:', e); }
       addToast(`Auto-rotate on — every ${rotateInterval / 60000}min`, 'rotate');
     }
   }, [autoRotate, rotateInterval, rotatePool, addToast]);
+
+
 
   const filtered = useMemo(() => {
     let base = allWallpapers;
@@ -598,7 +570,7 @@ export default function App() {
           const w = customWallpapers.find(cw => cw.path === p);
           if (w) {
             const realPath = w.realPath || w.path;
-            await invoke('delete_local_wallpaper', { path: realPath });
+            await invoke('delete_local_wallpaper', { path: realPath, allowed_folders: localFolders });
           }
         }
         setCustomWallpapers(prev => prev.filter(w => !selectedWallpapers.includes(w.path)));
@@ -612,9 +584,9 @@ export default function App() {
         setSelectedWallpapers([]);
       }
     } catch (err) {
-      addToast(`${err}`, 'error');
+      addToast(`Deletion failed: ${err}`, 'error');
     }
-  }, [selectedWallpapers, addToast, customConfirm]);
+  }, [selectedWallpapers, customWallpapers, localFolders, addToast, customConfirm]);
 
   const handleDeleteLocal = useCallback(async (wallpaper, isCache = false) => {
     try {
@@ -634,7 +606,7 @@ export default function App() {
           addToast(`Removed ${wallpaper.name} from cache`, 'success');
         } else {
           const realPath = wallpaper.realPath || wallpaper.path;
-          await invoke('delete_local_wallpaper', { path: realPath });
+          await invoke('delete_local_wallpaper', { path: realPath, allowed_folders: localFolders });
           setCustomWallpapers(prev => prev.filter(w => w.path !== wallpaper.path));
           setFavorites(prev => {
             const newFavs = prev.filter(p => p !== wallpaper.path);
@@ -648,7 +620,7 @@ export default function App() {
       console.error(err);
       addToast(`Error: ${err}`, 'error');
     }
-  }, [addToast, customConfirm]);
+  }, [localFolders, addToast, customConfirm]);
 
   const toggleFavorite = useCallback((wallpaper) => {
     setFavorites(prev => {
