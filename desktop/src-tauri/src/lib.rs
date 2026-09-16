@@ -754,7 +754,6 @@ async fn set_video_wallpaper(
         )
         .title("CozyPixels Video Wallpaper")
         .decorations(false)
-        .transparent(false)
         .always_on_bottom(true)
         .fullscreen(true)
         .build()
