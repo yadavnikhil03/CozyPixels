@@ -40,6 +40,7 @@ struct WallpaperInfo {
 async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
+        let _guard = WALLPAPER_MUTEX.lock().unwrap();
         if let Some(video_window) = app.get_webview_window("video_bg") {
             if let Err(e) = video_window.destroy() {
                 eprintln!("[CozyPixels] Warning: failed to stop live wallpaper window: {}", e);
@@ -47,21 +48,21 @@ async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, Str
         }
         let app_for_main = app.clone();
         if let Err(e) = dispatch_main(&app_for_main, || unsafe { gif_wallpaper::destroy(); }) {
-            // Non-fatal: log but continue — the GIF window may already be gone.
             eprintln!("[CozyPixels] Warning: failed to dispatch GIF cleanup: {}", e);
         }
     }
 
     if !url.starts_with("http://") && !url.starts_with("https://") {
+        let _guard = WALLPAPER_MUTEX.lock().unwrap();
         set_wallpaper_os(&url)?;
         return Ok("Local wallpaper set".to_string());
     }
 
-    // Check the content-addressable cache first to avoid redundant downloads.
     if let Ok(cache_dir) = get_cache_dir(&app) {
         let cached_path = cache_file_path(&cache_dir, &url);
         if cached_path.exists() {
             if let Some(path_str) = cached_path.to_str() {
+                let _guard = WALLPAPER_MUTEX.lock().unwrap();
                 set_wallpaper_os(path_str)?;
                 return Ok("Wallpaper set from cache".to_string());
             }
@@ -71,12 +72,11 @@ async fn set_wallpaper(app: tauri::AppHandle, url: String) -> Result<String, Str
     let temp_dir = std::env::temp_dir();
     let filename = url
         .split('/')
-        .last()
+        .next_back()
         .unwrap_or("cozy-wallpaper.jpg")
         .to_string();
     let temp_path = temp_dir.join(format!("cozypixels_{}", filename));
 
-    // Clean up other cached temp wallpapers to avoid unbounded temp dir growth.
     if let Ok(entries) = std::fs::read_dir(&temp_dir) {
         for entry in entries.flatten() {
             if let Some(name) = entry.file_name().to_str() {
@@ -227,7 +227,7 @@ async fn set_lock_screen(url: String) -> Result<String, String> {
             url.replace('/', "\\")
         } else {
             let temp_dir = std::env::temp_dir();
-            let filename = url.split('/').last().unwrap_or("cozy-lock.jpg").to_string();
+            let filename = url.split('/').next_back().unwrap_or("cozy-lock.jpg").to_string();
             let temp_path = temp_dir.join(format!("cozypixels_lock_{}", filename));
             let path_clone = temp_path.clone();
             
@@ -253,7 +253,7 @@ async fn set_lock_screen(url: String) -> Result<String, String> {
             Ok(())
         }).await.map_err(|e| format!("Task error: {}", e))??;
         
-        return Ok("Lock screen updated successfully".to_string());
+        Ok("Lock screen updated successfully".to_string())
     }
     
     #[cfg(not(target_os = "windows"))]
@@ -326,7 +326,7 @@ async fn start_auto_rotate(
 
             if url.starts_with("http://") || url.starts_with("https://") {
                 let temp_dir = std::env::temp_dir();
-                let filename = url.split('/').last().unwrap_or("wallpaper.jpg").to_string();
+                let filename = url.split('/').next_back().unwrap_or("wallpaper.jpg").to_string();
                 let temp_path = temp_dir.join(format!("cozypixels_{}", filename));
 
                 if temp_path.exists() {
@@ -376,7 +376,7 @@ fn update_rotate_interval(new_interval_ms: u64) {
 }
 
 fn is_supported_media(name_lower: &str) -> bool {
-    name_lower.ends_with(".jpg") || name_lower.ends_with(".jpeg") || name_lower.ends_with(".png") || name_lower.ends_with(".webp") || name_lower.ends_with(".gif") || name_lower.ends_with(".bmp") || name_lower.ends_with(".mp4") || name_lower.ends_with(".webm") || name_lower.ends_with(".mkv")
+    name_lower.ends_with(".jpg") || name_lower.ends_with(".jpeg") || name_lower.ends_with(".png") || name_lower.ends_with(".webp") || name_lower.ends_with(".gif") || name_lower.ends_with(".bmp") || name_lower.ends_with(".mp4") || name_lower.ends_with(".webm")
 }
 
 #[tauri::command]
@@ -433,7 +433,7 @@ fn is_safe_extension(path: &str) -> bool {
         return false;
     }
     let ext = p.extension().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
-    let allowed = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "avif", "mp4", "webm", "mkv"];
+    let allowed = ["jpg", "jpeg", "png", "webp", "gif", "bmp", "avif", "mp4", "webm"];
     allowed.contains(&ext.as_str())
 }
 
@@ -562,55 +562,42 @@ use winapi::shared::windef::HWND;
 use winapi::shared::minwindef::{BOOL, LPARAM};
 
 #[cfg(target_os = "windows")]
-fn wallpaper_host_hwnd() -> HWND {
-    use winapi::um::winuser::{
-        EnumWindows, FindWindowA, FindWindowExA, GetClassNameA, GetParent,
-        IsWindowVisible, SendMessageTimeoutA, SMTO_NORMAL,
-    };
+static mut WORKERW: HWND = std::ptr::null_mut();
 
-    struct HostScan {
-        progman: HWND,
-        found: HWND,
-    }
-
-    unsafe extern "system" fn find_host_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
-        let ctx = &mut *(lparam as *mut HostScan);
-        if IsWindowVisible(hwnd) != 0 {
-            let mut class = [0i8; 64];
-            GetClassNameA(hwnd, class.as_mut_ptr(), class.len() as i32);
-            let name = std::ffi::CStr::from_ptr(class.as_ptr()).to_string_lossy();
-            if name == "WorkerW"
-                && (ctx.progman.is_null() || GetParent(hwnd) == ctx.progman)
-                && FindWindowExA(
-                    hwnd,
-                    std::ptr::null_mut(),
-                    b"SHELLDLL_DefView\0".as_ptr() as *const i8,
-                    std::ptr::null_mut(),
-                )
-                .is_null()
-            {
-                ctx.found = hwnd;
-                return 0;
-            }
+#[cfg(target_os = "windows")]
+unsafe extern "system" fn enum_windows_proc(hwnd: HWND, _: LPARAM) -> BOOL {
+    use winapi::um::winuser::FindWindowExA;
+    let p = FindWindowExA(hwnd, std::ptr::null_mut(), c"SHELLDLL_DefView".as_ptr(), std::ptr::null_mut());
+    if !p.is_null() {
+        let worker = FindWindowExA(std::ptr::null_mut(), hwnd, c"WorkerW".as_ptr(), std::ptr::null_mut());
+        if !worker.is_null() {
+            WORKERW = worker;
         }
-        1
     }
+    1
+}
 
+#[cfg(target_os = "windows")]
+fn wallpaper_host_hwnd() -> HWND {
+    use winapi::um::winuser::{EnumWindows, FindWindowA, SendMessageTimeoutA, SMTO_NORMAL};
     unsafe {
-        let progman = FindWindowA(b"Progman\0".as_ptr() as *const i8, std::ptr::null_mut());
+        WORKERW = std::ptr::null_mut();
+        let progman = FindWindowA(c"Progman".as_ptr(), std::ptr::null_mut());
         if !progman.is_null() {
             let mut result: usize = 0;
-            SendMessageTimeoutA(progman, 0x052C, 0, 0, SMTO_NORMAL, 1000, &mut result);
+            SendMessageTimeoutA(
+                progman,
+                0x052C,
+                0,
+                0,
+                SMTO_NORMAL,
+                1000,
+                &mut result,
+            );
+            EnumWindows(Some(enum_windows_proc), 0);
         }
-        for _ in 0..25 {
-            let mut ctx = HostScan { progman, found: std::ptr::null_mut() };
-            EnumWindows(Some(find_host_proc), &mut ctx as *mut HostScan as LPARAM);
-            if !ctx.found.is_null() {
-                return ctx.found;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(40));
-        }
-        progman
+
+        if !WORKERW.is_null() { WORKERW } else { progman }
     }
 }
 
@@ -654,32 +641,99 @@ async fn set_video_wallpaper(
 
     #[cfg(target_os = "windows")]
     {
+        use winapi::um::winuser::{
+            GetSystemMetrics, SetParent, SetWindowLongW, SetWindowPos,
+            GWL_STYLE, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN,
+            SWP_NOACTIVATE, SWP_SHOWWINDOW, WS_CHILD, WS_VISIBLE,
+        };
+        let window_label = "video_bg";
         let video_url = player_url.unwrap_or_else(|| url.clone());
 
         let lower = video_url.to_lowercase();
-        if !lower.ends_with(".gif") {
-            return Err("Animated desktop wallpapers currently support GIF files".to_string());
-        }
+        let is_gif = lower.ends_with(".gif");
 
-        let bytes = load_wallpaper_bytes(&video_url).await?;
-        let decoded = gif_wallpaper::decode_gif(&bytes)
-            .map_err(|e| format!("Failed to decode animated wallpaper: {}", e))?;
+        if is_gif {
+            let bytes = load_wallpaper_bytes(&url).await?;
+            let decoded = gif_wallpaper::decode_gif(&bytes)
+                .map_err(|e| format!("Failed to decode animated wallpaper: {}", e))?;
 
-        let host = wallpaper_host_hwnd();
-        if host.is_null() {
-            return Err("Could not find the Windows desktop host window".to_string());
-        }
+            let _guard = WALLPAPER_MUTEX.lock().unwrap();
+            let host = wallpaper_host_hwnd();
+            if host.is_null() {
+                return Err("Could not find the Windows desktop host window".to_string());
+            }
+            let host_id = host as usize;
+            
+            if let Some(video_window) = app.get_webview_window(window_label) {
+                let _ = video_window.close();
+            }
 
-        let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
-        let app_for_main = app.clone();
-        let host_id = host as usize;
-        dispatch_main(&app_for_main, move || {
-            let result = unsafe {
-                gif_wallpaper::show(decoded, host_id as winapi::shared::windef::HWND)
+            let (tx, rx) = std::sync::mpsc::channel::<Result<(), String>>();
+            let app_for_main = app.clone();
+            dispatch_main(&app_for_main, move || {
+                let result = unsafe {
+                    gif_wallpaper::show(decoded, host_id as winapi::shared::windef::HWND)
+                };
+                let _ = tx.send(result);
+            })?;
+            rx.recv().map_err(|_| "Desktop renderer did not start".to_string())??;
+        } else {
+            let _guard = WALLPAPER_MUTEX.lock().unwrap();
+            let host = wallpaper_host_hwnd();
+            if host.is_null() {
+                return Err("Could not find the Windows desktop host window".to_string());
+            }
+            let app_for_main = app.clone();
+            if let Err(e) = dispatch_main(&app_for_main, || unsafe { gif_wallpaper::destroy(); }) {
+                eprintln!("[CozyPixels] Warning: failed to dispatch GIF cleanup: {}", e);
+            }
+
+            let window = if let Some(w) = app.get_webview_window(window_label) {
+                w
+            } else {
+                let encoded_url: String = url::form_urlencoded::byte_serialize(video_url.as_bytes()).collect();
+                let w = tauri::WebviewWindowBuilder::new(
+                    &app,
+                    window_label,
+                    tauri::WebviewUrl::App(format!("/?videoUrl={}", encoded_url).parse().unwrap())
+                )
+                .title("CozyPixels Video Wallpaper")
+                .decorations(false)
+                .transparent(true)
+                .skip_taskbar(true)
+                .visible(false)
+                .build()
+                .map_err(|e| e.to_string())?;
+
+                let hwnd = w.hwnd().map_err(|e| e.to_string())?;
+                let hwnd_ptr: winapi::shared::windef::HWND = unsafe { std::mem::transmute(hwnd) };
+                let width = unsafe { GetSystemMetrics(SM_CXVIRTUALSCREEN) };
+                let height = unsafe { GetSystemMetrics(SM_CYVIRTUALSCREEN) };
+                let x = unsafe { winapi::um::winuser::GetSystemMetrics(winapi::um::winuser::SM_XVIRTUALSCREEN) };
+                let y = unsafe { winapi::um::winuser::GetSystemMetrics(winapi::um::winuser::SM_YVIRTUALSCREEN) };
+
+                if width <= 0 || height <= 0 {
+                    return Err("Could not determine the desktop size".to_string());
+                }
+
+                unsafe {
+                    SetParent(hwnd_ptr, host);
+                    SetWindowLongW(hwnd_ptr, GWL_STYLE, (WS_CHILD | WS_VISIBLE) as i32);
+                    SetWindowPos(
+                        hwnd_ptr,
+                        std::ptr::null_mut(),
+                        x,
+                        y,
+                        width,
+                        height,
+                        SWP_NOACTIVATE | SWP_SHOWWINDOW,
+                    );
+                }
+                w
             };
-            let _ = tx.send(result);
-        })?;
-        rx.recv().map_err(|_| "Desktop renderer did not start".to_string())??;
+
+            let _ = window.emit("change-video", &video_url);
+        }
     }
     
     #[cfg(target_os = "macos")]

@@ -1,5 +1,5 @@
 #![cfg(target_os = "windows")]
-
+#![allow(clippy::all)]
 use std::num::NonZeroU64;
 use std::sync::Mutex;
 use std::sync::OnceLock;

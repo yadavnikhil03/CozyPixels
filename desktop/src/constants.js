@@ -3,4 +3,4 @@ export const API_URL = `https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@${S
 export const STATIC_URL = `https://cdn.jsdelivr.net/gh/yadavnikhil03/CozyPixels@${STATIC_COMMIT}/frontend/public`;
 
 export const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'avif'];
-export const MEDIA_EXTENSIONS = [...IMAGE_EXTENSIONS, 'gif', 'mp4', 'webm', 'mkv'];
+export const MEDIA_EXTENSIONS = [...IMAGE_EXTENSIONS, 'gif', 'mp4', 'webm'];

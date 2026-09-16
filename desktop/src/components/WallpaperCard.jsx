@@ -37,9 +37,8 @@ export const WallpaperCard = React.memo(({ wallpaper, onSetWallpaper, onPreview,
 
     const isMp4 = p.endsWith('.mp4');
     const isWebm = p.endsWith('.webm');
-    const isMkv = p.endsWith('.mkv');
 
-    return isMp4 || isWebm || isMkv;
+    return isMp4 || isWebm;
   }, [wallpaper.path]);
 
   useEffect(() => {

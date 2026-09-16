@@ -35,7 +35,7 @@ export const Lightbox = ({ wallpaper, onClose, onSetWallpaper, onSetLockScreen, 
 
   if (!wallpaper) return null;
   const displayName = formatWallpaperName(wallpaper.name);
-  const isVideo = wallpaper.path.toLowerCase().endsWith('.mp4') || wallpaper.path.toLowerCase().endsWith('.webm') || wallpaper.path.toLowerCase().endsWith('.mkv');
+  const isVideo = wallpaper.path.toLowerCase().endsWith('.mp4') || wallpaper.path.toLowerCase().endsWith('.webm');
 
   return (
     <motion.div className="lightbox" onClick={onClose}
