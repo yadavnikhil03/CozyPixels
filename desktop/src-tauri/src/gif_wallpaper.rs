@@ -78,10 +78,12 @@ unsafe extern "system" fn wnd_proc(hwnd: HWND, msg: UINT, wparam: WPARAM, lparam
         WM_PAINT => {
             let mut ps: PAINTSTRUCT = std::mem::zeroed();
             let hdc = BeginPaint(hwnd, &mut ps);
+
+            let mut rc: RECT = std::mem::zeroed();
+            GetClientRect(hwnd, &mut rc);
+
             if let Ok(mut guard) = state().lock() {
                 if let Some(st) = guard.as_mut() {
-                    let mut rc: RECT = std::mem::zeroed();
-                    GetClientRect(hwnd, &mut rc);
                     let w = rc.right;
                     let h = rc.bottom;
                     if w > 0 && h > 0 && st.dib_hdc != 0 {
@@ -151,6 +153,7 @@ unsafe fn build_dib(st: &mut State) -> Result<(), String> {
             GetLastError()
         ));
     }
+
     let dib_hdc = CreateCompatibleDC(std::ptr::null_mut());
     if dib_hdc.is_null() {
         DeleteObject(dib as HGDIOBJ);
@@ -159,7 +162,14 @@ unsafe fn build_dib(st: &mut State) -> Result<(), String> {
             GetLastError()
         ));
     }
-    SelectObject(dib_hdc, dib as HGDIOBJ);
+    if SelectObject(dib_hdc, dib as HGDIOBJ).is_null() {
+        DeleteDC(dib_hdc);
+        DeleteObject(dib as HGDIOBJ);
+        return Err(format!(
+            "SelectObject failed (error {})",
+            GetLastError()
+        ));
+    }
     st.dib = dib as usize;
     st.dib_bits = bits as usize;
     st.dib_hdc = dib_hdc as usize;
@@ -167,10 +177,11 @@ unsafe fn build_dib(st: &mut State) -> Result<(), String> {
     Ok(())
 }
 
-pub unsafe fn show(decoded: DecodedGif, host: HWND) -> Result<(), String> {
+pub unsafe fn show(decoded: DecodedGif, host: HWND) -> Result<HWND, String> {
     if decoded.frames.is_empty() {
         return Err("The GIF has no frames".to_string());
     }
+
     destroy();
 
     let hinstance = GetModuleHandleW(std::ptr::null()) as HINSTANCE;
@@ -181,27 +192,13 @@ pub unsafe fn show(decoded: DecodedGif, host: HWND) -> Result<(), String> {
     wc.lpszClassName = GIF_CLASS.as_ptr();
     RegisterClassExW(&wc);
 
-    // Use the virtual screen dimensions so the GIF covers all connected monitors.
-    // SM_CXVIRTUALSCREEN / SM_CYVIRTUALSCREEN give the total width/height of the
-    // bounding rectangle that encompasses all monitors.
-    // SM_XVIRTUALSCREEN / SM_YVIRTUALSCREEN give the top-left corner offset
-    // (negative when a monitor is to the left or above the primary).
-    let vx = GetSystemMetrics(SM_XVIRTUALSCREEN);
-    let vy = GetSystemMetrics(SM_YVIRTUALSCREEN);
-    let vw = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-    let vh = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-    // Fallback to the host client rect if virtual screen metrics are unavailable.
-    let (w, h, x, y) = if vw > 0 && vh > 0 {
-        (vw, vh, vx, vy)
-    } else {
-        let mut rc: RECT = std::mem::zeroed();
-        GetClientRect(host, &mut rc);
-        if rc.right <= 0 || rc.bottom <= 0 {
-            return Err("Desktop host has an invalid size".to_string());
-        }
-        (rc.right, rc.bottom, 0, 0)
-    };
+    // Retrieve host dimensions for the GIF
+    let mut hc: RECT = std::mem::zeroed();
+    GetClientRect(host, &mut hc);
+    if hc.right <= 0 || hc.bottom <= 0 {
+        return Err("Desktop host has an invalid size".to_string());
+    }
+    let (w, h, x, y) = (hc.right, hc.bottom, 0, 0);
 
     let hwnd = CreateWindowExW(
         0,
@@ -245,12 +242,12 @@ pub unsafe fn show(decoded: DecodedGif, host: HWND) -> Result<(), String> {
     ShowWindow(hwnd, SW_SHOW);
     InvalidateRect(hwnd, std::ptr::null_mut(), 0);
     UpdateWindow(hwnd);
-    Ok(())
+    Ok(hwnd)
 }
 
 pub unsafe fn destroy() {
     if let Ok(mut guard) = state().lock() {
-        if let Some(mut st) = guard.take() {
+        if let Some(st) = guard.take() {
             if st.hwnd != 0 {
                 KillTimer(st.hwnd as HWND, 1usize);
                 DestroyWindow(st.hwnd as HWND);
@@ -261,7 +258,6 @@ pub unsafe fn destroy() {
             if st.dib != 0 {
                 DeleteObject(st.dib as HGDIOBJ);
             }
-            st.dib_bits = 0;
         }
     }
 }

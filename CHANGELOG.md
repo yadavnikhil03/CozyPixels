@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1] - 2026-09-17
+
+### Fixed
+
+- **Video Wallpaper Borders:** Fixed the 16x9 border on video wallpapers by forcefully stripping `WS_CAPTION`, `WS_THICKFRAME`, and `WS_SYSMENU` from the inner `Chrome_WidgetWin` and outer WebView, and recalculating the window layout mathematically against the desktop dimensions.
+- **Renderer Cleanup Errors:** Upgraded generic Win32 `ERROR_ACCESS_DENIED` errors during wallpaper transitions (Video -> GIF, etc.). The native renderers now properly coordinate with the main thread event loop to cleanly dismantle themselves.
+- **Diagnostic Code:** Purged over 70 diagnostic lines, debugging Z-order overrides, `WS_POPUP` test surfaces, checksum validations, and GdiFlush dumps used during development, yielding a clean production renderer.
 ## [1.6.0] - 2026-09-11
 
 ### Improved
