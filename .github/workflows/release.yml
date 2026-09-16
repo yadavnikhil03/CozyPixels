@@ -106,4 +106,6 @@ jobs:
           releaseBody: ${{ steps.release_notes.outputs.body }}
           releaseDraft: false
           prerelease: false
-          args: ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
+          args: >-
+            ${{ matrix.platform == 'macos-latest' && '--target universal-apple-darwin' || '' }}
+            ${{ matrix.platform == 'windows-latest' && '--bundles nsis' || '' }}
